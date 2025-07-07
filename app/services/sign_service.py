@@ -1,10 +1,12 @@
 import io
 
+import boto3
 from PIL import Image
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
+from app.db.crud.sign import save_sign
 from app.exception.custom_exception import AppException
 
 config = Config(".env")
@@ -42,3 +44,28 @@ def generate_presigned_url(file_name: str):
             code=CODE.ERROR.PRESIGNED_URL_FAILED,
             message=MESSAGE.ERROR.PRESIGNED_URL_FAILED,
         ) from exc
+
+
+def move_file_s3(
+    temp_file_name: str, bucket: str, final_file_name: str
+) -> bool:
+    try:
+        resource_s3 = boto3.resource(
+            S3.ResourceName,
+            aws_access_key_id=config("CREDENTIALS_ACCESS_KEY"),
+            aws_secret_access_key=config("CREDENTIALS_SECRET_KEY"),
+        )
+        copy_source = {"Bucket": bucket, "Key": temp_file_name}
+
+        resource_s3.meta.client.copy(copy_source, bucket, final_file_name)
+        s3_client.delete_object(Bucket=bucket, Key=temp_file_name)
+    except Exception as exc:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.SAVE_FAILED,
+            message=MESSAGE.ERROR.SAVE_FAILED,
+        ) from exc
+
+
+async def save_sign_db(user, file_name):
+    await save_sign(user, file_name)

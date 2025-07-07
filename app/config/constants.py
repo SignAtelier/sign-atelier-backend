@@ -35,6 +35,7 @@ class AUTH:
 
 class S3:
     PresignedUrl = 15 * 60
+    ResourceName = "s3"
 
 
 class COOKIE:

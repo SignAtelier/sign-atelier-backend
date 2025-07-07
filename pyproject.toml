@@ -7,3 +7,6 @@ line-length = 79
 
 [tool.pylint."MESSAGES CONTROL"]
 disable = ["duplicate-code"]
+
+[tool.isort]
+profile = "black"

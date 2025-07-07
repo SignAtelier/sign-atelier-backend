@@ -11,7 +11,6 @@ class BaseDocument(Document):
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
-    is_deleted: bool = False
 
     class Config:
         arbitrary_types_allowed = True

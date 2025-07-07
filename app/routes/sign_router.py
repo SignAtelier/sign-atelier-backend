@@ -1,11 +1,17 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, UploadFile
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
-from app.services.sign_service import generate_sign_ai, upload_temp_sign
+from app.services.sign_service import (
+    generate_sign_ai,
+    move_file_s3,
+    save_sign_db,
+    upload_temp_sign,
+)
 
 router = APIRouter()
 config = Config(".env")
@@ -13,6 +19,8 @@ config = Config(".env")
 
 @router.post("/request")
 async def generate_sign(
+    _file: Annotated[UploadFile, File()],
+    _name: Annotated[str, Form()],
     user=Depends(get_current_user),
 ):
     sign_buffer = generate_sign_ai()
@@ -31,4 +39,20 @@ async def generate_sign(
         "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
         "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
         "detail": url,
+    }
+
+
+@router.post("/")
+async def finalize_sign_upload(
+    temp_file_name: str = Form(), user=Depends(get_current_user)
+):
+    final_file_name = temp_file_name.replace("temp/", "signs/", 1)
+
+    move_file_s3(temp_file_name, config("S3_BUCKET"), final_file_name)
+    await save_sign_db(user, final_file_name)
+
+    return {
+        "status": 201,
+        "code": CODE.SUCCESS.SAVE_SUCCESS,
+        "message": MESSAGE.SUCCESS.SAVE_SUCCESS,
     }

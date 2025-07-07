@@ -6,7 +6,7 @@ from app.models.user import User
 
 class Sign(BaseDocument):
     user: Link[User]
-    sign_image_url: str
+    file_name: str
     is_deleted: bool = False
 
     class Settings:
