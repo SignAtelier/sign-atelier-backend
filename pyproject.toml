@@ -1,5 +1,6 @@
+[tool.pylint.'MAIN']
+init-hook = 'import sys; sys.path.insert(0, "./")'
+
+[tool.black]
 target-version = ['py311']
-profile = "black"
-line_length = 79
-multi_line_output = 3
-include_trailing_comma = true
+line-length = 79
