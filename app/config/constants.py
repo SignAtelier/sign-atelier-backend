@@ -37,3 +37,7 @@ class S3:
 
 class COOKIE:
     MAX_AGE = 15 * 60
+
+
+class CLIENT:
+    URL = "http://localhost:5173"
