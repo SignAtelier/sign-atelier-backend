@@ -5,6 +5,7 @@ class MESSAGE:
         NOT_FOUND = "데이터를 찾을 수 없습니다."
         SERVER_ERROR = "서버 내부 오류가 발생했습니다."
         SAVE_FAILED = "데이터 저장에 실패했습니다."
+        PRESIGNED_URL_FAILED = "접근 URL을 생성하지 못했습니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
@@ -20,6 +21,7 @@ class CODE:
         NOT_FOUND = "NOT_FOUND"
         SERVER_ERROR = "SERVER_ERROR"
         SAVE_FAILED = "SAVE_FAILED"
+        PRESIGNED_URL_FAILED = "PRESIGNED_URL_FAILED"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"
