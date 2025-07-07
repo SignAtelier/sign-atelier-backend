@@ -3,12 +3,17 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from starlette.config import Config
+from starlette.middleware.sessions import SessionMiddleware
 
 from app.config.constants import CODE, MESSAGE
 from app.db.session import client, db, init_db
 from app.exception.custom_exception import AppException
+from app.routes import auth_router, user_router
 
 load_dotenv(override=True)
+
+config = Config(".env")
 
 
 @asynccontextmanager
@@ -36,10 +41,16 @@ async def db_lifespan(application: FastAPI):
 
 app = FastAPI(lifespan=db_lifespan)
 
+app.add_middleware(SessionMiddleware, secret_key=config("SECRET_KEY"))
+
 
 @app.get("/")
 def read_root():
     return
+
+
+app.include_router(auth_router.router, prefix="/api/auth")
+app.include_router(user_router.router, prefix="/api/users")
 
 
 @app.exception_handler(AppException)

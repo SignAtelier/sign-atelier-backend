@@ -8,6 +8,7 @@ class MESSAGE:
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
+        SIGN_GENERATION_SUCCESS = "싸인 생성에 성공했습니다."
 
 
 class CODE:
@@ -22,11 +23,17 @@ class CODE:
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"
+        SIGN_GENERATION_SUCCESS = "SIGN_GENERATION_SUCCESS"
 
 
 class AUTH:
-    EXPIRE = 15
+    class TOKEN:
+        EXPIRE = 15
 
 
 class S3:
-    EXPIRE = 15 * 60
+    PresignedUrl = 15 * 60
+
+
+class COOKIE:
+    MAX_AGE = 15 * 60

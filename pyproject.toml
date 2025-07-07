@@ -4,3 +4,6 @@ init-hook = 'import sys; sys.path.insert(0, "./")'
 [tool.black]
 target-version = ['py311']
 line-length = 79
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = ["duplicate-code"]
