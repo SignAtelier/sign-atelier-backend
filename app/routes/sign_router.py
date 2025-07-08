@@ -1,7 +1,6 @@
 import uuid
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Depends, Form
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
@@ -19,8 +18,6 @@ config = Config(".env")
 
 @router.post("/request")
 async def generate_sign(
-    _file: Annotated[UploadFile, File()],
-    _name: Annotated[str, Form()],
     user=Depends(get_current_user),
 ):
     sign_buffer = generate_sign_ai()
