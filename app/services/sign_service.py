@@ -7,6 +7,7 @@ from starlette.config import Config
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
 from app.db.crud.sign import save_sign
+from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
 
 config = Config(".env")
@@ -67,5 +68,7 @@ def move_file_s3(
         ) from exc
 
 
-async def save_sign_db(user, file_name):
+async def save_sign_db(user_info, file_name):
+    user = await get_user(user_info=user_info)
+
     await save_sign(user, file_name)

@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
 
+from app.config.constants import CODE, MESSAGE
+from app.exception.custom_exception import AppException
 from app.models.user import User
 
 
@@ -33,3 +35,21 @@ async def upsert_user(userinfo: dict, provider: str):
         "profile": user.profile,
         "provider": user.provider,
     }
+
+
+async def get_user(user_info):
+    social_id = user_info["social_id"]
+    provider = user_info["provider"]
+
+    user = await User.find_one(
+        User.social_id == social_id, User.provider == provider
+    )
+
+    if not user:
+        raise AppException(
+            status=404,
+            code=CODE.ERROR.NOT_FOUND,
+            message=MESSAGE.ERROR.NOT_FOUND,
+        )
+
+    return user
