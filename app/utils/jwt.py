@@ -10,7 +10,7 @@ config = Config(".env")
 
 def create_access_token(
     data: dict,
-    expires_minutes: timedelta = timedelta(minutes=TOKEN.EXPIRE.ACCESS),
+    expires_minutes: timedelta = TOKEN.EXPIRE.ACCESS,
 ):
     to_encode = data.copy()
     to_encode["exp"] = int(
@@ -26,7 +26,7 @@ def create_access_token(
 
 def create_refresh_token(
     data: dict,
-    expires_hours: timedelta = timedelta(hours=TOKEN.EXPIRE.REFRESH),
+    expires_hours: timedelta = TOKEN.EXPIRE.REFRESH,
 ):
     to_encode = data.copy()
     to_encode["exp"] = int(
