@@ -3,7 +3,8 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from starlette.config import Config
 
-from app.config.constants import TOKEN
+from app.config.constants import CODE, MESSAGE, TOKEN
+from app.exception.custom_exception import AppException
 
 config = Config(".env")
 
@@ -52,3 +53,23 @@ def decode_access_token(access_token):
     }
 
     return user_info
+
+
+def decode_refresh_token(refresh_token: str) -> dict:
+    payload = jwt.decode(
+        refresh_token,
+        config("SECRET_KEY"),
+        algorithms=[config("ALGORITHM")],
+    )
+
+    if payload.get("type") != "refresh":
+        raise AppException(
+            status=401,
+            code=CODE.ERROR.INVALID_REFRESH_TOKEN,
+            message=MESSAGE.ERROR.INVALID_REFRESH_TOKEN,
+        )
+
+    return {
+        "social_id": payload.get("sub"),
+        "provider": payload.get("provider"),
+    }
