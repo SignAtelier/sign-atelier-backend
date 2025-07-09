@@ -6,6 +6,8 @@ class MESSAGE:
         SERVER_ERROR = "서버 내부 오류가 발생했습니다."
         SAVE_FAILED = "데이터 저장에 실패했습니다."
         PRESIGNED_URL_FAILED = "접근 URL을 생성하지 못했습니다."
+        MISSING_REFRESH_TOKEN = "로그인 정보가 만료되었습니다"
+        INVALID_REFRESH_TOKEN = "유효하지 않은 리프레시 토큰입니다"
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
@@ -22,6 +24,8 @@ class CODE:
         SERVER_ERROR = "SERVER_ERROR"
         SAVE_FAILED = "SAVE_FAILED"
         PRESIGNED_URL_FAILED = "PRESIGNED_URL_FAILED"
+        MISSING_REFRESH_TOKEN = "MISSING_REFRESH_TOKEN"
+        INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"
@@ -31,15 +35,18 @@ class CODE:
 class TOKEN:
     class EXPIRE:
         ACCESS = 15
+        REFRESH = 12
 
 
 class S3:
-    PresignedUrl = 15 * 60
+    PresignedUrl = 60 * 60
     ResourceName = "s3"
 
 
 class COOKIE:
-    MAX_AGE = 15 * 60
+    class MaxAge:
+        ACCESS = 15 * 60
+        REFRESH = 12 * 60 * 60
 
 
 class CLIENT:
