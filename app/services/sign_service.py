@@ -7,7 +7,7 @@ from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
-from app.db.crud.sign import save_sign
+from app.db.crud.sign import get_signs, save_sign
 from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
 
@@ -82,3 +82,9 @@ async def save_sign_db(user_info, file_name):
     sign_name = generate_filename()
 
     await save_sign(user, file_name, sign_name)
+
+
+async def get_signs_list(user_info):
+    user = await get_user(user_info=user_info)
+
+    return await get_signs(user)
