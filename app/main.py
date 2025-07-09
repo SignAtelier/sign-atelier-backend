@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.config import Config
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -54,7 +54,7 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return
+    return RedirectResponse(CLIENT.URL)
 
 
 app.include_router(auth_router.router, prefix="/api/auth")
