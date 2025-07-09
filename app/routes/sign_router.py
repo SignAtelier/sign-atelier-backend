@@ -7,6 +7,7 @@ from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.services.sign_service import (
     generate_sign_ai,
+    get_signs_list,
     move_file_s3,
     save_sign_db,
     upload_temp_sign,
@@ -53,3 +54,10 @@ async def finalize_sign_upload(
         "code": CODE.SUCCESS.SAVE_SUCCESS,
         "message": MESSAGE.SUCCESS.SAVE_SUCCESS,
     }
+
+
+@router.get("/list")
+async def get_signs(user=Depends(get_current_user)):
+    signs = await get_signs_list(user)
+
+    return {"status": 200, "signs": signs}
