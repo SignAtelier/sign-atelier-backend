@@ -2,7 +2,7 @@ from fastapi import APIRouter, Cookie, Request
 from fastapi.responses import RedirectResponse, Response
 
 from app.config.auth import oauth
-from app.config.constants import CODE, COOKIE, MESSAGE
+from app.config.constants import CLIENT, CODE, COOKIE, MESSAGE
 from app.exception.custom_exception import AppException
 from app.services.auth_service import (
     fetch_google_userinfo,
@@ -71,3 +71,11 @@ async def refresh_access_token(
     )
 
     return response
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    response.delete_cookie("access_token")
+    response.delete_cookie("refresh_token")
+
+    RedirectResponse(CLIENT.URL)
