@@ -24,7 +24,24 @@ def create_access_token(
     )
 
 
-def decode_jwt_token(access_token):
+def create_refresh_token(
+    data: dict,
+    expires_hours: timedelta = timedelta(hours=TOKEN.EXPIRE.REFRESH),
+):
+    to_encode = data.copy()
+    to_encode["exp"] = int(
+        (
+            datetime.now(timezone.utc) + timedelta(hours=expires_hours)
+        ).timestamp()
+    )
+    to_encode["type"] = "refresh"
+
+    return jwt.encode(
+        to_encode, config("SECRET_KEY"), algorithm=config("ALGORITHM")
+    )
+
+
+def decode_access_token(access_token):
     payload = jwt.decode(
         access_token, config("SECRET_KEY"), algorithms=config("ALGORITHM")
     )

@@ -3,7 +3,7 @@ from jose.exceptions import ExpiredSignatureError, JWTError
 
 from app.config.constants import CODE, MESSAGE
 from app.exception.custom_exception import AppException
-from app.utils.jwt import decode_jwt_token
+from app.utils.jwt import decode_access_token
 
 
 async def get_current_user(request: Request):
@@ -17,7 +17,7 @@ async def get_current_user(request: Request):
         )
 
     try:
-        user_info = decode_jwt_token(access_token)
+        user_info = decode_access_token(access_token)
 
         return user_info
     except ExpiredSignatureError as exc:
