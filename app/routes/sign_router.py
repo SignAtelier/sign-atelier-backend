@@ -6,6 +6,7 @@ from starlette.config import Config
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.services.sign_service import (
+    edit_name,
     generate_presigned_url,
     generate_sign_ai,
     get_signs_list,
@@ -76,3 +77,19 @@ async def get_signs(user=Depends(get_current_user)):
         )
 
     return {"status": 200, "signs": signs}
+
+
+@router.patch("/name")
+async def edit_sign_name(
+    sign_id: str = Form(),
+    new_name: str = Form(),
+    user=Depends(get_current_user),
+):
+    edited_sign = await edit_name(user, sign_id, new_name)
+    response = {
+        "id": str(edited_sign.id),
+        "name": edited_sign.name,
+        "udpatedAt": edited_sign.updated_at,
+    }
+
+    return {"status": 200, "editedSign": response}
