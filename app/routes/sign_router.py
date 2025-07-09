@@ -6,6 +6,7 @@ from starlette.config import Config
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.services.sign_service import (
+    generate_presigned_url,
     generate_sign_ai,
     get_signs_list,
     move_file_s3,
@@ -59,5 +60,19 @@ async def finalize_sign_upload(
 @router.get("/list")
 async def get_signs(user=Depends(get_current_user)):
     signs = await get_signs_list(user)
+    response = []
+
+    for sign in signs:
+        response.append(
+            {
+                "id": str(sign.id),
+                "name": sign.name,
+                "fileName": sign.file_name,
+                "url": generate_presigned_url(sign.file_name),
+                "createdAt": sign.created_at,
+                "updatedAt": sign.updated_at,
+                "isDeleted": sign.is_deleted,
+            }
+        )
 
     return {"status": 200, "signs": signs}
