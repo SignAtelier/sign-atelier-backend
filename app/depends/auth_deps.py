@@ -1,9 +1,9 @@
 from fastapi import Request
-from jose.exceptions import ExpiredSignatureError, JWTError
 
 from app.config.constants import CODE, MESSAGE
 from app.exception.custom_exception import AppException
-from app.utils.jwt import decode_jwt_token
+from app.utils.jwt import decode_access_token
+from app.utils.jwt_exception import handle_jwt_error
 
 
 async def get_current_user(request: Request):
@@ -17,24 +17,8 @@ async def get_current_user(request: Request):
         )
 
     try:
-        user_info = decode_jwt_token(access_token)
+        user_info = decode_access_token(access_token)
 
         return user_info
-    except ExpiredSignatureError as exc:
-        raise AppException(
-            status=401,
-            code=CODE.ERROR.TOKEN_EXPIRED,
-            message=MESSAGE.ERROR.UNAUTHORIZED,
-        ) from exc
-    except JWTError as exc:
-        raise AppException(
-            status=401,
-            code=CODE.ERROR.TOKEN_INVALID,
-            message=MESSAGE.ERROR.UNAUTHORIZED,
-        ) from exc
     except Exception as exc:
-        raise AppException(
-            status=500,
-            code=CODE.ERROR.SERVER_ERROR,
-            message=MESSAGE.ERROR.SERVER_ERROR,
-        ) from exc
+        handle_jwt_error(exc)
