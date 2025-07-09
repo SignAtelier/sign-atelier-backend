@@ -1,4 +1,5 @@
 import io
+from datetime import datetime, timedelta, timezone
 
 import boto3
 from PIL import Image
@@ -68,7 +69,16 @@ def move_file_s3(
         ) from exc
 
 
+def generate_filename() -> str:
+    kst = timezone(timedelta(hours=9))
+    now = datetime.now(kst)
+    timestamp = now.strftime("%Y%m%d_%H%M%S")
+
+    return f"signature_{timestamp}"
+
+
 async def save_sign_db(user_info, file_name):
     user = await get_user(user_info=user_info)
+    sign_name = generate_filename()
 
-    await save_sign(user, file_name)
+    await save_sign(user, file_name, sign_name)
