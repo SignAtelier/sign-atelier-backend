@@ -28,9 +28,9 @@ class CODE:
         SIGN_GENERATION_SUCCESS = "SIGN_GENERATION_SUCCESS"
 
 
-class AUTH:
-    class TOKEN:
-        EXPIRE = 15
+class TOKEN:
+    class EXPIRE:
+        ACCESS = 15
 
 
 class S3:

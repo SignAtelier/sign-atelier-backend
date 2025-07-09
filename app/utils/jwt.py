@@ -3,11 +3,14 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from starlette.config import Config
 
+from app.config.constants import TOKEN
+
 config = Config(".env")
 
 
-def create_jwt_token(
-    data: dict, expires_minutes: timedelta = timedelta(hours=1)
+def create_access_token(
+    data: dict,
+    expires_minutes: timedelta = timedelta(minutes=TOKEN.EXPIRE.ACCESS),
 ):
     to_encode = data.copy()
     to_encode["exp"] = int(

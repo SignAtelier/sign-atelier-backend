@@ -4,10 +4,10 @@ from authlib.integrations.starlette_client import OAuthError
 from fastapi import Request
 
 from app.config.auth import oauth
-from app.config.constants import AUTH, CODE, MESSAGE
+from app.config.constants import CODE, MESSAGE
 from app.db.crud.user import upsert_user
 from app.exception.custom_exception import AppException
-from app.utils.jwt import create_jwt_token
+from app.utils.jwt import create_access_token
 
 
 async def handle_google_auth(userinfo: dict, provider: str) -> dict:
@@ -38,6 +38,4 @@ def create_user_access_token(user_data: dict) -> str:
         "iat": int(datetime.now(timezone.utc).timestamp()),
     }
 
-    return create_jwt_token(
-        data=jwt_payload, expires_minutes=AUTH.TOKEN.EXPIRE
-    )
+    return create_access_token(data=jwt_payload)

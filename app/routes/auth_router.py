@@ -2,7 +2,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
 from app.config.auth import oauth
-from app.config.constants import COOKIE
+from app.config.constants import TOKEN
 from app.services.auth_service import fetch_google_userinfo, handle_google_auth
 
 router = APIRouter()
@@ -29,7 +29,7 @@ async def auth(request: Request):
         httponly=True,
         samesite="lax",
         secure=False,
-        max_age=COOKIE.MAX_AGE,
+        max_age=TOKEN.EXPIRE.ACCESS,
     )
 
     return response
