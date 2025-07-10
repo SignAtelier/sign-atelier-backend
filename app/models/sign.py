@@ -8,6 +8,7 @@ class Sign(BaseDocument):
     user: Link[User]
     name: str
     file_name: str
+    outline_file_name: str
     is_deleted: bool = False
 
     class Settings:
