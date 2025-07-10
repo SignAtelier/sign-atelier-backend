@@ -77,11 +77,11 @@ def generate_filename() -> str:
     return f"signature_{timestamp}"
 
 
-async def save_sign_db(user_info, file_name):
+async def save_sign_db(user_info, file_name, outline_file_name):
     user = await get_user(user_info=user_info)
     sign_name = generate_filename()
 
-    await save_sign(user, file_name, sign_name)
+    await save_sign(user, file_name, sign_name, outline_file_name)
 
 
 async def get_signs_list(user_info):
