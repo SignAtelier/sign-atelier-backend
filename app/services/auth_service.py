@@ -17,11 +17,9 @@ from app.utils.jwt_exception import handle_jwt_error
 
 async def handle_google_auth(userinfo: dict, provider: str) -> dict:
     user_data = await upsert_user(userinfo, provider)
-
-    access_token = create_user_access_token(user_data)
     refresh_token = create_user_refresh_token(user_data)
 
-    return {"access_token": access_token, "refresh_token": refresh_token}
+    return refresh_token
 
 
 async def fetch_google_userinfo(request: Request) -> str:

@@ -45,7 +45,6 @@ class S3:
 
 class COOKIE:
     class MaxAge:
-        ACCESS = 15 * 60
         REFRESH = 12 * 60 * 60
 
 

@@ -42,7 +42,7 @@ async def generate_sign(
     }
 
 
-@router.post("/")
+@router.post("/upload")
 async def finalize_sign_upload(
     temp_file_name: str = Form(), user=Depends(get_current_user)
 ):

@@ -23,22 +23,12 @@ async def login(request: Request):
 @router.get("/google", name="auth_google")
 async def auth(request: Request):
     userinfo = await fetch_google_userinfo(request)
-    tokens = await handle_google_auth(userinfo, "google")
+    refresh_token = await handle_google_auth(userinfo, "google")
+    response = RedirectResponse(CLIENT.URL)
 
-    redirect_uri = "http://localhost:5173"
-
-    response = RedirectResponse(url=redirect_uri)
-    response.set_cookie(
-        key="access_token",
-        value=tokens["access_token"],
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        max_age=COOKIE.MaxAge.ACCESS,
-    )
     response.set_cookie(
         key="refresh_token",
-        value=tokens["refresh_token"],
+        value=refresh_token,
         httponly=True,
         samesite="lax",
         secure=False,
@@ -60,22 +50,12 @@ async def refresh_access_token(
         )
 
     access_token = await reissue_access_token(refresh_token)
-    response = Response()
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        max_age=COOKIE.MaxAge.ACCESS,
-    )
 
-    return response
+    return {"accessToken": access_token}
 
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("access_token")
     response.delete_cookie("refresh_token")
 
     RedirectResponse(CLIENT.URL)
