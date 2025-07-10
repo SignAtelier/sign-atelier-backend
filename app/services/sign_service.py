@@ -2,7 +2,9 @@ import io
 from datetime import datetime, timedelta, timezone
 
 import boto3
-from PIL import Image
+import cv2
+import numpy as np
+from PIL import Image, ImageFilter, ImageOps
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE, S3
@@ -23,12 +25,10 @@ def generate_sign_ai():
     return buffer
 
 
-def upload_temp_sign(buffer: io.BytesIO, bucket: str, file_name: str) -> str:
+def upload_sign(buffer: io.BytesIO, bucket: str, file_name: str) -> str:
     buffer.seek(0)
 
     s3_client.upload_fileobj(buffer, bucket, file_name)
-
-    return generate_presigned_url(file_name)
 
 
 def generate_presigned_url(file_name: str):
@@ -77,11 +77,11 @@ def generate_filename() -> str:
     return f"signature_{timestamp}"
 
 
-async def save_sign_db(user_info, file_name):
+async def save_sign_db(user_info, file_name, outline_file_name):
     user = await get_user(user_info=user_info)
     sign_name = generate_filename()
 
-    await save_sign(user, file_name, sign_name)
+    await save_sign(user, file_name, sign_name, outline_file_name)
 
 
 async def get_signs_list(user_info):
@@ -94,3 +94,19 @@ async def edit_name(user_info, sign_id, new_name):
     await get_user(user_info=user_info)
 
     return await update_name(sign_id, new_name)
+
+
+def extract_outline(buffer: io.BytesIO):
+    image = Image.open(buffer).convert("L")
+    contrasted = ImageOps.autocontrast(image)
+    filtered = contrasted.filter(ImageFilter.MedianFilter(size=3))
+
+    cv_img = np.array(filtered)
+    edges = cv2.Canny(cv_img, threshold1=30, threshold2=100)
+
+    outline_img = Image.fromarray(edges).convert("RGB")
+    output_buffer = io.BytesIO()
+    outline_img.save(output_buffer, format="PNG")
+    output_buffer.seek(0)
+
+    return output_buffer
