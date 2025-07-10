@@ -1,5 +1,7 @@
+import io
 import uuid
 
+import requests
 from fastapi import APIRouter, Depends, Form
 from starlette.config import Config
 
@@ -7,12 +9,13 @@ from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.services.sign_service import (
     edit_name,
+    extract_outline,
     generate_presigned_url,
     generate_sign_ai,
     get_signs_list,
     move_file_s3,
     save_sign_db,
-    upload_temp_sign,
+    upload_sign,
 )
 
 router = APIRouter()
@@ -30,9 +33,10 @@ async def generate_sign(
 
     file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
 
-    url = upload_temp_sign(
+    upload_sign(
         buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
     )
+    url = generate_presigned_url(file_name)
 
     return {
         "status": 201,
@@ -46,10 +50,18 @@ async def generate_sign(
 async def finalize_sign_upload(
     temp_file_name: str = Form(), user=Depends(get_current_user)
 ):
-    final_file_name = temp_file_name.replace("temp/", "signs/", 1)
+    final_file_name = temp_file_name.replace("temp", "signs", 1)
 
     move_file_s3(temp_file_name, config("S3_BUCKET"), final_file_name)
-    await save_sign_db(user, final_file_name)
+
+    sign_url = generate_presigned_url(final_file_name)
+    response = requests.get(sign_url)
+    buffer = io.BytesIO(response.content)
+    outline_buffer = extract_outline(buffer)
+    outline_file_name = final_file_name.replace("signs", "outline", 1)
+
+    upload_sign(outline_buffer, config("S3_BUCKET"), outline_file_name)
+    await save_sign_db(user, final_file_name, outline_file_name)
 
     return {
         "status": 201,

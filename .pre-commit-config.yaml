@@ -25,4 +25,5 @@ repos:
             "pillow",
             "opencv-python",
             "numpy",
+            "requests",
           ]
