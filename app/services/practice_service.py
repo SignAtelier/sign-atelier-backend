@@ -1,8 +1,9 @@
-from app.db.crud.practice import save_practice
-from app.db.crud.user import get_user
+from app.db.crud.practice import get_practice, save_practice
 
 
-async def save_practice_db(user_info, file_name, sign_id):
-    await get_user(user_info=user_info)
+async def save_practice_db(file_name, sign_id):
+    return await save_practice(file_name, sign_id)
 
-    await save_practice(file_name, sign_id)
+
+async def get_practices_db(sign_id):
+    return await get_practice(sign_id)

@@ -7,8 +7,9 @@ from starlette.config import Config
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.exception.custom_exception import AppException
-from app.services.practice_service import save_practice_db
+from app.services.practice_service import get_practices_db, save_practice_db
 from app.utils.s3 import upload_sign
+
 
 router = APIRouter()
 config = Config(".env")
@@ -35,20 +36,49 @@ async def upload_practice(
 
         buffer = io.BytesIO(await file.read())
 
+        practice = await save_practice_db(file_name, sign_id)
         upload_sign(
             buffer=buffer, bucket=config("S3_BUCKET"), file_name=file_name
         )
-        await save_practice_db(user, file_name, sign_id)
+        response = {
+            "id": practice.id,
+            "fileName": practice.file_name,
+            "createdAt": practice.created_at,
+            "updatedAt": practice.updated_at,
+        }
 
         return {
             "status": 201,
             "code": CODE.SUCCESS.PRCTICE_SAVED,
             "message": MESSAGE.SUCCESS.PRCTICE_SAVED,
-            "detail": file_name,
+            "detail": response,
         }
     except Exception as exc:
+        print(exc)
         raise AppException(
             status=500,
             code=CODE.ERROR.PRCTICE_FAILED,
             message=MESSAGE.ERROR.PRCTICE_FAILED,
         ) from exc
+
+
+@router.get("/list")
+async def get_practices(sign_id: str, _=Depends(get_current_user)):
+    practices_db = await get_practices_db(sign_id)
+
+    if len(practices_db) == 0:
+        return []
+
+    response = []
+
+    for practice in practices_db:
+        item = {
+            "id": str(practice.id),
+            "fileName": practice.file_name,
+            "createdAt": practice.created_at,
+            "updatedAt": practice.updated_at,
+        }
+
+        response.append(item)
+
+    return response

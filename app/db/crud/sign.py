@@ -17,7 +17,9 @@ async def save_sign(
 
 
 async def get_signs(user):
-    return await Sign.find(Sign.user.id == user.id).to_list()
+    return (
+        await Sign.find(Sign.user.id == user.id).sort("-created_at").to_list()
+    )
 
 
 async def get_sign_by_id(sign_id):

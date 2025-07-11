@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from app.config.constants import CODE, MESSAGE
 from app.db.crud.sign import get_sign_by_id
 from app.exception.custom_exception import AppException
@@ -19,4 +21,12 @@ async def save_practice(file_name: str, sign_id: str):
         sign=sign,
     )
 
-    await practice_record.insert()
+    return await practice_record.insert()
+
+
+async def get_practice(sign_id: str):
+    return (
+        await PracticeRecord.find(PracticeRecord.sign.id == ObjectId(sign_id))
+        .sort("-created_at")
+        .to_list()
+    )
