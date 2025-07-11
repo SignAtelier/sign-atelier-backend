@@ -25,23 +25,6 @@ def generate_sign_ai():
     return buffer
 
 
-def generate_presigned_url(file_name: str):
-    try:
-        response = s3_client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": config("S3_BUCKET"), "Key": file_name},
-            ExpiresIn=S3.PresignedUrl,
-        )
-
-        return response
-    except Exception as exc:
-        raise AppException(
-            status=500,
-            code=CODE.ERROR.PRESIGNED_URL_FAILED,
-            message=MESSAGE.ERROR.PRESIGNED_URL_FAILED,
-        ) from exc
-
-
 def move_file_s3(
     temp_file_name: str, bucket: str, final_file_name: str
 ) -> bool:

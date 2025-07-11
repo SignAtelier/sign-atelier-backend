@@ -8,7 +8,7 @@ from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.exception.custom_exception import AppException
 from app.services.practice_service import save_practice_db
-from app.utils.s3.upload import upload_sign
+from app.utils.s3 import upload_sign
 
 router = APIRouter()
 config = Config(".env")

@@ -10,13 +10,12 @@ from app.depends.auth_deps import get_current_user
 from app.services.sign_service import (
     edit_name,
     extract_outline,
-    generate_presigned_url,
     generate_sign_ai,
     get_signs_list,
     move_file_s3,
     save_sign_db,
 )
-from app.utils.s3.upload import upload_sign
+from app.utils.s3 import generate_presigned_url, upload_sign
 
 router = APIRouter()
 config = Config(".env")
