@@ -25,12 +25,6 @@ def generate_sign_ai():
     return buffer
 
 
-def upload_sign(buffer: io.BytesIO, bucket: str, file_name: str) -> str:
-    buffer.seek(0)
-
-    s3_client.upload_fileobj(buffer, bucket, file_name)
-
-
 def generate_presigned_url(file_name: str):
     try:
         response = s3_client.generate_presigned_url(

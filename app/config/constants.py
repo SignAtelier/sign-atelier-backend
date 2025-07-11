@@ -8,10 +8,13 @@ class MESSAGE:
         PRESIGNED_URL_FAILED = "접근 URL을 생성하지 못했습니다."
         MISSING_REFRESH_TOKEN = "로그인 정보가 만료되었습니다"
         INVALID_REFRESH_TOKEN = "유효하지 않은 리프레시 토큰입니다"
+        MISSING_FIELD = "필수 필드가 누락되었습니다."
+        PRCTICE_FAILED = "연습 기록 저장에 실패했습니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
         SIGN_GENERATION_SUCCESS = "싸인 생성에 성공했습니다."
+        PRCTICE_SAVED = "연습 기록 저장에 성공했습니다."
 
 
 class CODE:
@@ -26,10 +29,13 @@ class CODE:
         PRESIGNED_URL_FAILED = "PRESIGNED_URL_FAILED"
         MISSING_REFRESH_TOKEN = "MISSING_REFRESH_TOKEN"
         INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN"
+        MISSING_FIELD = "MISSING_FIELD"
+        PRCTICE_FAILED = "PRCTICE_FAILED"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"
         SIGN_GENERATION_SUCCESS = "SIGN_GENERATION_SUCCESS"
+        PRCTICE_SAVED = "PRCTICE_SAVED"
 
 
 class TOKEN:

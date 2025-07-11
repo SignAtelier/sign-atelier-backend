@@ -15,8 +15,8 @@ from app.services.sign_service import (
     get_signs_list,
     move_file_s3,
     save_sign_db,
-    upload_sign,
 )
+from app.utils.s3.upload import upload_sign
 
 router = APIRouter()
 config = Config(".env")

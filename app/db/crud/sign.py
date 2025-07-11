@@ -20,6 +20,12 @@ async def get_signs(user):
     return await Sign.find(Sign.user.id == user.id).to_list()
 
 
+async def get_sign_by_id(sign_id):
+    object_id = ObjectId(sign_id)
+
+    return await Sign.find_one(Sign.id == object_id)
+
+
 async def update_name(sign_id, new_name):
     object_id = ObjectId(sign_id)
     sign = await Sign.find_one(Sign.id == object_id)

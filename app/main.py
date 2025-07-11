@@ -10,7 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.config.constants import CLIENT, CODE, MESSAGE
 from app.db.session import client, db, init_db
 from app.exception.custom_exception import AppException
-from app.routes import auth_router, sign_router, user_router
+from app.routes import auth_router, practice_router, sign_router, user_router
 
 load_dotenv(override=True)
 
@@ -60,6 +60,7 @@ def read_root():
 app.include_router(auth_router.router, prefix="/api/auth")
 app.include_router(user_router.router, prefix="/api/users")
 app.include_router(sign_router.router, prefix="/api/signs")
+app.include_router(practice_router.router, prefix="/api/practices")
 
 
 @app.exception_handler(AppException)
