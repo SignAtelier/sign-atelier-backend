@@ -5,14 +5,19 @@ from starlette.config import Config
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
 from app.exception.custom_exception import AppException
+from app.utils.exception import raise_save_failed
+
 
 config = Config(".env")
 
 
 def upload_sign(buffer: io.BytesIO, bucket: str, file_name: str) -> str:
-    buffer.seek(0)
+    try:
+        buffer.seek(0)
 
-    s3_client.upload_fileobj(buffer, bucket, file_name)
+        s3_client.upload_fileobj(buffer, bucket, file_name)
+    except Exception as exc:
+        raise_save_failed(exc)
 
 
 def generate_presigned_url(file_name: str):

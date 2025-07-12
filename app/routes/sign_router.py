@@ -7,7 +7,6 @@ from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
-from app.exception.custom_exception import AppException
 from app.services.sign_service import (
     delete_sign_db,
     edit_name,
@@ -15,6 +14,7 @@ from app.services.sign_service import (
     generate_sign_ai,
     get_signs_list,
     move_file_s3,
+    restore_sign_db,
     save_sign_db,
 )
 from app.utils.s3 import generate_presigned_url, upload_sign
@@ -28,31 +28,24 @@ config = Config(".env")
 async def generate_sign(
     user=Depends(get_current_user),
 ):
-    try:
-        sign_buffer = generate_sign_ai()
-        social_id = user["social_id"]
-        provider = user["provider"]
-        user_info = social_id + provider
+    sign_buffer = generate_sign_ai()
+    social_id = user["social_id"]
+    provider = user["provider"]
+    user_info = social_id + provider
 
-        file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
+    file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
 
-        upload_sign(
-            buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
-        )
-        url = generate_presigned_url(file_name)
+    upload_sign(
+        buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
+    )
+    url = generate_presigned_url(file_name)
 
-        return {
-            "status": 201,
-            "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
-            "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
-            "detail": url,
-        }
-    except Exception as exc:
-        raise AppException(
-            status=500,
-            code=CODE.ERROR.GENERATE_FAILED,
-            message=MESSAGE.ERROR.GENERATE_FAILED,
-        ) from exc
+    return {
+        "status": 201,
+        "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
+        "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
+        "detail": url,
+    }
 
 
 @router.post("/upload")
@@ -122,7 +115,6 @@ async def delete_sign(
     user=Depends(get_current_user),
 ):
     deleted_sign = await delete_sign_db(user, sign_id)
-
     response = {
         "id": str(deleted_sign.id),
         "createdAt": deleted_sign.created_at,
@@ -134,3 +126,22 @@ async def delete_sign(
     }
 
     return {"status": 200, "deletedSign": response}
+
+
+@router.post("/restore")
+async def restore_sign(
+    sign_id: str = Body(..., embed=True),
+    user=Depends(get_current_user),
+):
+    restored_sign = await restore_sign_db(user, sign_id)
+    response = {
+        "id": str(restored_sign.id),
+        "createdAt": restored_sign.created_at,
+        "deletedAt": restored_sign.deleted_at,
+        "fileName": restored_sign.file_name,
+        "isDeleted": restored_sign.is_deleted,
+        "name": restored_sign.name,
+        "updatedAt": restored_sign.updated_at,
+    }
+
+    return {"status": 200, "restoredSign": response}

@@ -46,3 +46,12 @@ async def soft_delete_sign(sign: Sign):
     await sign.save()
 
     return sign
+
+
+async def restore_sign(sign: Sign):
+    sign.is_deleted = False
+    sign.deleted_at = None
+
+    await sign.save()
+
+    return sign

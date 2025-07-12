@@ -12,24 +12,33 @@ from app.config.s3 import s3_client
 from app.db.crud.sign import (
     get_sign_by_id,
     get_signs,
+    restore_sign,
     save_sign,
     soft_delete_sign,
     update_name,
 )
 from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
+from app.utils.exception import raise_save_failed
 
 
 config = Config(".env")
 
 
 def generate_sign_ai():
-    img = Image.new("RGB", (512, 256), color="black")
-    buffer = io.BytesIO()
-    img.save(buffer, format="PNG")
-    buffer.seek(0)
+    try:
+        img = Image.new("RGB", (512, 512), color="black")
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        buffer.seek(0)
 
-    return buffer
+        return buffer
+    except Exception as exc:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.GENERATE_FAILED,
+            message=MESSAGE.ERROR.GENERATE_FAILED,
+        ) from exc
 
 
 def move_file_s3(
@@ -46,11 +55,7 @@ def move_file_s3(
         resource_s3.meta.client.copy(copy_source, bucket, final_file_name)
         s3_client.delete_object(Bucket=bucket, Key=temp_file_name)
     except Exception as exc:
-        raise AppException(
-            status=500,
-            code=CODE.ERROR.SAVE_FAILED,
-            message=MESSAGE.ERROR.SAVE_FAILED,
-        ) from exc
+        raise_save_failed(exc)
 
 
 def generate_filename() -> str:
@@ -112,3 +117,28 @@ async def delete_sign_db(user, sign_id: str):
     deleted_sign = await soft_delete_sign(sign)
 
     return deleted_sign
+
+
+async def restore_sign_db(user, sign_id: str):
+    sign = await get_sign_by_id(sign_id)
+
+    if (
+        not sign.user.social_id == user["social_id"]
+        and not sign.user.provider == user["provider"]
+    ):
+        raise AppException(
+            status=403,
+            code=CODE.ERROR.FORBIDDEN,
+            message=MESSAGE.ERROR.FORBIDDEN,
+        )
+
+    if not sign.is_deleted:
+        raise AppException(
+            status=400,
+            code=CODE.ERROR.NOT_DELETED,
+            message=MESSAGE.ERROR.NOT_DELETED,
+        )
+
+    restored_sign = await restore_sign(sign)
+
+    return restored_sign

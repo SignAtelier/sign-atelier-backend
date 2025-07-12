@@ -4,8 +4,8 @@ from fastapi import Header
 
 from app.config.constants import CODE, MESSAGE
 from app.exception.custom_exception import AppException
+from app.utils.exception import handle_jwt_error
 from app.utils.jwt import decode_access_token
-from app.utils.jwt_exception import handle_jwt_error
 
 
 async def get_current_user(

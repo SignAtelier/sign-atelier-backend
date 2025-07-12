@@ -12,6 +12,8 @@ class MESSAGE:
         PRCTICE_FAILED = "연습 기록 저장에 실패했습니다."
         DELETE_FAILED_DB = "DB 데이터 삭제에 실패했습니다."
         FORBIDDEN = "권한이 없습니다."
+        NOT_DELETED = "삭제된 싸인이 아닙니다."
+        GENERATE_FAILED = "AI가 싸인 생성에 실패했습니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
@@ -36,6 +38,8 @@ class CODE:
         PRCTICE_FAILED = "PRCTICE_FAILED"
         DELETE_FAILED_DB = "DELETE_FAILED_DB"
         FORBIDDEN = "FORBIDDEN"
+        NOT_DELETED = "NOT_DELETED"
+        GENERATE_FAILED = "GENERATE_FAILED"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"

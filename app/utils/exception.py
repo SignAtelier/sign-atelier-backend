@@ -16,3 +16,11 @@ def handle_jwt_error(exc: Exception):
     raise AppException(
         500, CODE.ERROR.SERVER_ERROR, MESSAGE.ERROR.SERVER_ERROR
     ) from exc
+
+
+def raise_save_failed(exc: Exception):
+    raise AppException(
+        status=500,
+        code=CODE.ERROR.SAVE_FAILED,
+        message=MESSAGE.ERROR.SAVE_FAILED,
+    ) from exc

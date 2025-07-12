@@ -7,12 +7,12 @@ from app.config.auth import oauth
 from app.config.constants import CODE, MESSAGE
 from app.db.crud.user import get_user, upsert_user
 from app.exception.custom_exception import AppException
+from app.utils.exception import handle_jwt_error
 from app.utils.jwt import (
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
 )
-from app.utils.jwt_exception import handle_jwt_error
 
 
 async def handle_google_auth(userinfo: dict, provider: str) -> dict:
