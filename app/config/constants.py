@@ -11,6 +11,7 @@ class MESSAGE:
         MISSING_FIELD = "필수 필드가 누락되었습니다."
         PRCTICE_FAILED = "연습 기록 저장에 실패했습니다."
         DELETE_FAILED_DB = "DB 데이터 삭제에 실패했습니다."
+        FORBIDDEN = "권한이 없습니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
@@ -34,6 +35,7 @@ class CODE:
         MISSING_FIELD = "MISSING_FIELD"
         PRCTICE_FAILED = "PRCTICE_FAILED"
         DELETE_FAILED_DB = "DELETE_FAILED_DB"
+        FORBIDDEN = "FORBIDDEN"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"

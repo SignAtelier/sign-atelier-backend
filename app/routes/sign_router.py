@@ -2,12 +2,14 @@ import io
 import uuid
 
 import requests
-from fastapi import APIRouter, Depends, Form
+from fastapi import APIRouter, Body, Depends, Form
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
+from app.exception.custom_exception import AppException
 from app.services.sign_service import (
+    delete_sign_db,
     edit_name,
     extract_outline,
     generate_sign_ai,
@@ -17,6 +19,7 @@ from app.services.sign_service import (
 )
 from app.utils.s3 import generate_presigned_url, upload_sign
 
+
 router = APIRouter()
 config = Config(".env")
 
@@ -25,24 +28,31 @@ config = Config(".env")
 async def generate_sign(
     user=Depends(get_current_user),
 ):
-    sign_buffer = generate_sign_ai()
-    social_id = user["social_id"]
-    provider = user["provider"]
-    user_info = social_id + provider
+    try:
+        sign_buffer = generate_sign_ai()
+        social_id = user["social_id"]
+        provider = user["provider"]
+        user_info = social_id + provider
 
-    file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
+        file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
 
-    upload_sign(
-        buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
-    )
-    url = generate_presigned_url(file_name)
+        upload_sign(
+            buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
+        )
+        url = generate_presigned_url(file_name)
 
-    return {
-        "status": 201,
-        "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
-        "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
-        "detail": url,
-    }
+        return {
+            "status": 201,
+            "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
+            "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
+            "detail": url,
+        }
+    except Exception as exc:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.GENERATE_FAILED,
+            message=MESSAGE.ERROR.GENERATE_FAILED,
+        ) from exc
 
 
 @router.post("/upload")
@@ -104,3 +114,23 @@ async def edit_sign_name(
     }
 
     return {"status": 200, "editedSign": response}
+
+
+@router.delete("/soft")
+async def delete_sign(
+    sign_id: str = Body(..., embed=True),
+    user=Depends(get_current_user),
+):
+    deleted_sign = await delete_sign_db(user, sign_id)
+
+    response = {
+        "id": str(deleted_sign.id),
+        "createdAt": deleted_sign.created_at,
+        "deletedAt": deleted_sign.deleted_at,
+        "fileName": deleted_sign.file_name,
+        "isDeleted": deleted_sign.is_deleted,
+        "name": deleted_sign.name,
+        "updatedAt": deleted_sign.updated_at,
+    }
+
+    return {"status": 200, "deletedSign": response}

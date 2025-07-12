@@ -9,9 +9,16 @@ from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
-from app.db.crud.sign import get_signs, save_sign, update_name
+from app.db.crud.sign import (
+    get_sign_by_id,
+    get_signs,
+    save_sign,
+    soft_delete_sign,
+    update_name,
+)
 from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
+
 
 config = Config(".env")
 
@@ -87,3 +94,21 @@ def extract_outline(buffer: io.BytesIO):
     output_buffer.seek(0)
 
     return output_buffer
+
+
+async def delete_sign_db(user, sign_id: str):
+    sign = await get_sign_by_id(sign_id)
+
+    if (
+        not sign.user.social_id == user["social_id"]
+        and not sign.user.provider == user["provider"]
+    ):
+        raise AppException(
+            status=403,
+            code=CODE.ERROR.FORBIDDEN,
+            message=MESSAGE.ERROR.FORBIDDEN,
+        )
+
+    deleted_sign = await soft_delete_sign(sign)
+
+    return deleted_sign
