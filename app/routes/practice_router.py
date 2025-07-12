@@ -1,13 +1,19 @@
 import io
 import uuid
+from typing import List
 
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Body, Depends, Form, UploadFile
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.exception.custom_exception import AppException
-from app.services.practice_service import get_practices_db, save_practice_db
+from app.services.practice_service import (
+    delete_practices_db,
+    delete_practices_s3,
+    get_practices_db,
+    save_practice_db,
+)
 from app.utils.s3 import upload_sign
 
 
@@ -54,7 +60,6 @@ async def upload_practice(
             "detail": response,
         }
     except Exception as exc:
-        print(exc)
         raise AppException(
             status=500,
             code=CODE.ERROR.PRCTICE_FAILED,
@@ -82,3 +87,24 @@ async def get_practices(sign_id: str, _=Depends(get_current_user)):
         response.append(item)
 
     return response
+
+
+@router.delete("")
+async def delete_practices(
+    file_names: List[str] = Body(...), _=Depends(get_current_user)
+):
+    deleted_count = await delete_practices_db(file_names)
+
+    if not len(file_names) == deleted_count:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.DELETE_FAILED_DB,
+            message=MESSAGE.ERROR.DELETE_FAILED_DB,
+        )
+
+    await delete_practices_s3(file_names)
+
+    return {
+        "code": CODE.SUCCESS.DELETE_SUCCESS,
+        "message": MESSAGE.SUCCESS.DELETE_SUCCESS,
+    }

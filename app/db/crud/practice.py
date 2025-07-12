@@ -1,7 +1,9 @@
+from beanie.operators import In
 from bson import ObjectId
 
 from app.config.constants import CODE, MESSAGE
 from app.db.crud.sign import get_sign_by_id
+from app.db.session import client
 from app.exception.custom_exception import AppException
 from app.models.practice import PracticeRecord
 
@@ -30,3 +32,15 @@ async def get_practice(sign_id: str):
         .sort("-created_at")
         .to_list()
     )
+
+
+async def delete_practices(file_names: list[str]):
+    async with await client.start_session() as session:
+        async with session.start_transaction():
+            result = await PracticeRecord.find(
+                In(PracticeRecord.file_name, file_names)
+            ).delete(session=session)
+
+            deleted_count = result.deleted_count
+
+            return deleted_count

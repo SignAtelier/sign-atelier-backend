@@ -10,11 +10,13 @@ class MESSAGE:
         INVALID_REFRESH_TOKEN = "유효하지 않은 리프레시 토큰입니다"
         MISSING_FIELD = "필수 필드가 누락되었습니다."
         PRCTICE_FAILED = "연습 기록 저장에 실패했습니다."
+        DELETE_FAILED_DB = "DB 데이터 삭제에 실패했습니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
         SIGN_GENERATION_SUCCESS = "싸인 생성에 성공했습니다."
         PRCTICE_SAVED = "연습 기록 저장에 성공했습니다."
+        DELETE_SUCCESS = "데이터를 삭제했습니다."
 
 
 class CODE:
@@ -31,11 +33,13 @@ class CODE:
         INVALID_REFRESH_TOKEN = "INVALID_REFRESH_TOKEN"
         MISSING_FIELD = "MISSING_FIELD"
         PRCTICE_FAILED = "PRCTICE_FAILED"
+        DELETE_FAILED_DB = "DELETE_FAILED_DB"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"
         SIGN_GENERATION_SUCCESS = "SIGN_GENERATION_SUCCESS"
         PRCTICE_SAVED = "PRCTICE_SAVED"
+        DELETE_SUCCESS = "DELETE_SUCCESS"
 
 
 class TOKEN:
