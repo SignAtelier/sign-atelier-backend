@@ -19,6 +19,7 @@ from app.db.crud.sign import (
 )
 from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
+from app.utils.cleanup import hard_delete_process
 from app.utils.exception import raise_save_failed
 
 
@@ -122,6 +123,13 @@ async def delete_sign_db(user, sign_id: str):
 async def restore_sign_db(user, sign_id: str):
     sign = await get_sign_by_id(sign_id)
 
+    if not sign:
+        raise AppException(
+            status=404,
+            code=CODE.ERROR.ALREADY_DELETED,
+            message=MESSAGE.ERROR.ALREADY_DELETED,
+        )
+
     if (
         not sign.user.social_id == user["social_id"]
         and not sign.user.provider == user["provider"]
@@ -142,3 +150,17 @@ async def restore_sign_db(user, sign_id: str):
     restored_sign = await restore_sign(sign)
 
     return restored_sign
+
+
+async def hard_delete_sign_db(sign_id: str):
+    sign = await get_sign_by_id(sign_id)
+
+    file_name = sign.file_name
+
+    await hard_delete_process(sign)
+
+    return file_name
+
+
+async def delete_sign_s3(file_name: str):
+    s3_client.delete_object(Bucket=config("S3_BUCKET"), Key=file_name)

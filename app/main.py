@@ -7,8 +7,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.config import Config
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.config.constants import CLIENT, CODE, MESSAGE
-from app.db.session import client, db, init_db
+from app.config.constants import CLIENT
 from app.exception.custom_exception import AppException
 from app.routes import (
     auth_router,
@@ -17,6 +16,7 @@ from app.routes import (
     sign_router,
     user_router,
 )
+from app.tasks import cleanup_garbage, connect_db
 
 
 load_dotenv(override=True)
@@ -25,29 +25,12 @@ config = Config(".env")
 
 
 @asynccontextmanager
-async def db_lifespan(application: FastAPI):
-    try:
-        await init_db()
-
-        ping_response = await db.command("ping")
-
-        if int(ping_response["ok"]) != 1:
-            raise AppException(
-                status=500,
-                code=CODE.ERROR.DB_CONNECTION_FAILED,
-                message=MESSAGE.ERROR.DB_CONNECTION_FAILED,
-            )
-
-        application.mongodb_client = client
-        application.database = db
-
+async def lifespan(application: FastAPI):
+    async with connect_db(application), cleanup_garbage():
         yield
 
-    finally:
-        client.close()
 
-
-app = FastAPI(lifespan=db_lifespan)
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(SessionMiddleware, secret_key=config("SECRET_KEY"))
 app.add_middleware(

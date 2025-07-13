@@ -14,12 +14,14 @@ class MESSAGE:
         FORBIDDEN = "권한이 없습니다."
         NOT_DELETED = "삭제된 싸인이 아닙니다."
         GENERATE_FAILED = "AI가 싸인 생성에 실패했습니다."
+        ALREADY_DELETED = "이미 삭제된 싸인입니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
         SIGN_GENERATION_SUCCESS = "싸인 생성에 성공했습니다."
         PRCTICE_SAVED = "연습 기록 저장에 성공했습니다."
         DELETE_SUCCESS = "데이터를 삭제했습니다."
+        HARD_DELETE = "데이터를 영구 삭제했습니다."
 
 
 class CODE:
@@ -40,12 +42,14 @@ class CODE:
         FORBIDDEN = "FORBIDDEN"
         NOT_DELETED = "NOT_DELETED"
         GENERATE_FAILED = "GENERATE_FAILED"
+        ALREADY_DELETED = "ALREADY_DELETED"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"
         SIGN_GENERATION_SUCCESS = "SIGN_GENERATION_SUCCESS"
         PRCTICE_SAVED = "PRCTICE_SAVED"
         DELETE_SUCCESS = "DELETE_SUCCESS"
+        HARD_DELETE = "HARD_DELETE"
 
 
 class TOKEN:
@@ -66,3 +70,7 @@ class COOKIE:
 
 class CLIENT:
     URL = "http://localhost:5173"
+
+
+class CleanupInterval:
+    SECONDS = 60

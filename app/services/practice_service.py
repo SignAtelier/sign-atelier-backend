@@ -1,7 +1,11 @@
 from starlette.config import Config
 
 from app.config.s3 import s3_client
-from app.db.crud.practice import delete_practices, get_practice, save_practice
+from app.db.crud.practice import (
+    delete_practices,
+    get_practices_by_sign_id,
+    save_practice,
+)
 
 
 config = Config(".env")
@@ -12,7 +16,7 @@ async def save_practice_db(file_name, sign_id):
 
 
 async def get_practices_db(sign_id):
-    return await get_practice(sign_id)
+    return await get_practices_by_sign_id(sign_id)
 
 
 async def delete_practices_s3(file_names):

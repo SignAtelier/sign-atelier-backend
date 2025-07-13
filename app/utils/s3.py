@@ -35,3 +35,7 @@ def generate_presigned_url(file_name: str):
             code=CODE.ERROR.PRESIGNED_URL_FAILED,
             message=MESSAGE.ERROR.PRESIGNED_URL_FAILED,
         ) from exc
+
+
+def delete_s3_file(bucket, key):
+    s3_client.delete_object(Bucket=bucket, Key=key)

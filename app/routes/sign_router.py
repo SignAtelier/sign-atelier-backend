@@ -9,10 +9,12 @@ from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
 from app.services.sign_service import (
     delete_sign_db,
+    delete_sign_s3,
     edit_name,
     extract_outline,
     generate_sign_ai,
     get_signs_list,
+    hard_delete_sign_db,
     move_file_s3,
     restore_sign_db,
     save_sign_db,
@@ -145,3 +147,19 @@ async def restore_sign(
     }
 
     return {"status": 200, "restoredSign": response}
+
+
+@router.delete("/hard")
+async def hard_delete_sign(
+    sign_id: str = Body(..., embed=True),
+    _=Depends(get_current_user),
+):
+    file_name = await hard_delete_sign_db(sign_id)
+
+    await delete_sign_s3(file_name)
+
+    return {
+        "status": 200,
+        "code": CODE.SUCCESS.HARD_DELETE,
+        "message": MESSAGE.SUCCESS.HARD_DELETE,
+    }
