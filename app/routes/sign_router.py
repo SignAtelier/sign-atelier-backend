@@ -94,6 +94,7 @@ async def get_signs(user=Depends(get_current_user)):
                 "createdAt": sign.created_at,
                 "updatedAt": sign.updated_at,
                 "isDeleted": sign.is_deleted,
+                "deletedAt": sign.deleted_at,
             }
         )
 
