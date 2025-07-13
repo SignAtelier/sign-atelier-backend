@@ -2,17 +2,19 @@ import io
 import uuid
 
 import requests
-from fastapi import APIRouter, Body, Depends, Form
+from fastapi import APIRouter, Body, Depends, File, Form, UploadFile
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
+from app.exception.custom_exception import AppException
 from app.services.sign_service import (
     delete_sign_db,
     delete_sign_s3,
     edit_name,
     extract_outline,
     generate_sign_ai,
+    get_sign_one,
     get_signs_list,
     hard_delete_sign_db,
     move_file_s3,
@@ -28,9 +30,12 @@ config = Config(".env")
 
 @router.post("/request")
 async def generate_sign(
+    name: str = Form(...),
+    file: UploadFile = File(...),
     user=Depends(get_current_user),
 ):
-    sign_buffer = generate_sign_ai()
+    image_bytes = await file.read()
+    sign_buffer = generate_sign_ai(name, image_bytes)
     social_id = user["social_id"]
     provider = user["provider"]
     user_info = social_id + provider
@@ -163,3 +168,41 @@ async def hard_delete_sign(
         "code": CODE.SUCCESS.HARD_DELETE,
         "message": MESSAGE.SUCCESS.HARD_DELETE,
     }
+
+
+@router.get("/sign/{sign_id}")
+async def get_sign(sign_id: str, user=Depends(get_current_user)):
+    sign = await get_sign_one(sign_id)
+
+    if (
+        sign.user.social_id != user["social_id"]
+        and sign.user.provider != user["provider"]
+    ):
+        raise AppException(
+            status=403,
+            code=CODE.ERROR.FORBIDDEN,
+            message=MESSAGE.ERROR.FORBIDDEN,
+        )
+
+    url = generate_presigned_url(sign.file_name)
+
+    return {"status": 200, "url": url}
+
+
+@router.get("/outline/{sign_id}")
+async def get_sing_outline(sign_id: str, user=Depends(get_current_user)):
+    sign = await get_sign_one(sign_id)
+
+    if (
+        sign.user.social_id != user["social_id"]
+        and sign.user.provider != user["provider"]
+    ):
+        raise AppException(
+            status=403,
+            code=CODE.ERROR.FORBIDDEN,
+            message=MESSAGE.ERROR.FORBIDDEN,
+        )
+
+    url = generate_presigned_url(sign.outline_file_name)
+
+    return {"status": 200, "url": url}

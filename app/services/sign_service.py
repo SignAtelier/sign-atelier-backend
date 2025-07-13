@@ -4,9 +4,10 @@ from datetime import datetime, timedelta, timezone
 import boto3
 import cv2
 import numpy as np
-from PIL import Image, ImageFilter, ImageOps
+from PIL import Image
 from starlette.config import Config
 
+from app.ai.generate_sign import generate_signature
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
 from app.db.crud.sign import (
@@ -26,14 +27,11 @@ from app.utils.exception import raise_save_failed
 config = Config(".env")
 
 
-def generate_sign_ai():
+def generate_sign_ai(name: str, image_bytes: io.BytesIO):
     try:
-        img = Image.new("RGB", (512, 512), color="black")
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-        buffer.seek(0)
+        sign_buffer = generate_signature(name, image_bytes)
 
-        return buffer
+        return sign_buffer
     except Exception as exc:
         raise AppException(
             status=500,
@@ -88,13 +86,36 @@ async def edit_name(user_info, sign_id, new_name):
 
 def extract_outline(buffer: io.BytesIO):
     image = Image.open(buffer).convert("L")
-    contrasted = ImageOps.autocontrast(image)
-    filtered = contrasted.filter(ImageFilter.MedianFilter(size=3))
+    cv_img = np.array(image)
 
-    cv_img = np.array(filtered)
-    edges = cv2.Canny(cv_img, threshold1=30, threshold2=100)
+    avg_brightness = np.mean(cv_img)
+    is_clean_background = avg_brightness > 240
 
-    outline_img = Image.fromarray(edges).convert("RGB")
+    if is_clean_background:
+        _, binary = cv2.threshold(cv_img, 200, 255, cv2.THRESH_BINARY)
+    else:
+        blurred = cv2.GaussianBlur(cv_img, (7, 7), 1.5)
+        binary = cv2.adaptiveThreshold(
+            blurred,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY,
+            25,
+            10,
+        )
+        kernel = np.ones((3, 3), np.uint8)
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+
+    edges = cv2.Canny(binary, 50, 150)
+    edges = cv2.bitwise_not(edges)
+    outline_img = Image.fromarray(edges).convert("RGBA")
+    datas = outline_img.getdata()
+    new_data = [
+        (0, 0, 0, 100) if item[:3] == (0, 0, 0) else (255, 255, 255, 0)
+        for item in datas
+    ]
+    outline_img.putdata(new_data)
+
     output_buffer = io.BytesIO()
     outline_img.save(output_buffer, format="PNG")
     output_buffer.seek(0)
@@ -164,3 +185,7 @@ async def hard_delete_sign_db(sign_id: str):
 
 async def delete_sign_s3(file_name: str):
     s3_client.delete_object(Bucket=config("S3_BUCKET"), Key=file_name)
+
+
+async def get_sign_one(sign_id: str):
+    return await get_sign_by_id(sign_id)

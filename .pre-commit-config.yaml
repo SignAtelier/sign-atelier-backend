@@ -26,4 +26,7 @@ repos:
             "opencv-python",
             "numpy",
             "requests",
+            "torch",
+            "diffusers",
+            "ip_adapter",
           ]
