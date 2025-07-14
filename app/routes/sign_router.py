@@ -145,7 +145,6 @@ async def restore_sign(
     response = {
         "id": str(restored_sign.id),
         "createdAt": restored_sign.created_at,
-        "deletedAt": restored_sign.deleted_at,
         "fileName": restored_sign.file_name,
         "isDeleted": restored_sign.is_deleted,
         "name": restored_sign.name,
