@@ -10,7 +10,7 @@ BASE_MODEL_PATH = "SG161222/Realistic_Vision_V4.0_noVAE"
 VAE_MODEL_PATH = "stabilityai/sd-vae-ft-mse"
 IMAGE_ENCODER_PATH = "/workspace/models/image_encoder"
 IP_CKPT = "/workspace/models/ip-adapter_sd15.bin"
-DEVICE = "cuda"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 noise_scheduler = DDIMScheduler(
     num_train_timesteps=1000,
