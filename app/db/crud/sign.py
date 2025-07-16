@@ -27,6 +27,16 @@ async def get_signs(user):
     )
 
 
+async def get_signs_by_status(user, is_deleted: bool):
+    return (
+        await Sign.find(
+            Sign.user.id == user.id, Eq(Sign.is_deleted, is_deleted)
+        )
+        .sort("-created_at")
+        .to_list()
+    )
+
+
 async def get_sign_by_id(sign_id):
     object_id = ObjectId(sign_id)
 

@@ -1,10 +1,13 @@
+import base64
 import io
 from datetime import datetime, timedelta, timezone
 
 import boto3
 import cv2
 import numpy as np
+import requests
 from PIL import Image
+from skimage.morphology import skeletonize
 from starlette.config import Config
 
 from app.ai.generate_sign import generate_signature
@@ -12,7 +15,7 @@ from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
 from app.db.crud.sign import (
     get_sign_by_id,
-    get_signs,
+    get_signs_by_status,
     restore_sign,
     save_sign,
     soft_delete_sign,
@@ -72,10 +75,10 @@ async def save_sign_db(user_info, file_name, outline_file_name):
     await save_sign(user, file_name, sign_name, outline_file_name)
 
 
-async def get_signs_list(user_info):
+async def get_signs_by_status_db(user_info, is_deleted):
     user = await get_user(user_info=user_info)
 
-    return await get_signs(user)
+    return await get_signs_by_status(user, is_deleted)
 
 
 async def edit_name(user_info, sign_id, new_name):
@@ -189,3 +192,33 @@ async def delete_sign_s3(file_name: str):
 
 async def get_sign_one(sign_id: str):
     return await get_sign_by_id(sign_id)
+
+
+async def get_skeleton_sign(sign_url: str, width: int, height: int):
+    response = requests.get(sign_url)
+
+    if response.status_code != 200:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.FETCH_FAILED,
+            message=MESSAGE.ERROR.FETCH_FAILED,
+        )
+
+    byte_array = np.frombuffer(response.content, dtype=np.uint8)
+    img = cv2.imdecode(byte_array, cv2.IMREAD_GRAYSCALE)
+
+    _, binary = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY_INV)
+    skeleton = skeletonize(binary // 255).astype(np.uint8) * 255
+
+    kernel = np.ones((3, 3), np.uint8)
+    dilated_skeleton = cv2.dilate(skeleton, kernel, iterations=1)
+
+    resized_skeleton = cv2.resize(
+        dilated_skeleton, (width, height), interpolation=cv2.INTER_NEAREST
+    )
+    resized_skeleton = 255 - resized_skeleton
+
+    _, buffer = cv2.imencode(".png", resized_skeleton)
+    encoded_skeleton = base64.b64encode(buffer.tobytes()).decode("utf-8")
+
+    return encoded_skeleton

@@ -29,4 +29,5 @@ repos:
             "torch",
             "diffusers",
             "ip_adapter",
+            "scikit-image",
           ]

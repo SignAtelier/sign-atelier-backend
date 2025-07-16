@@ -15,6 +15,7 @@ class MESSAGE:
         NOT_DELETED = "삭제된 싸인이 아닙니다."
         GENERATE_FAILED = "AI가 싸인 생성에 실패했습니다."
         ALREADY_DELETED = "이미 삭제된 싸인입니다."
+        FETCH_FAILED = "조회에 실패했습니다."
 
     class SUCCESS:
         SAVE_SUCCESS = "데이터 저장에 성공했습니다."
@@ -43,6 +44,7 @@ class CODE:
         NOT_DELETED = "NOT_DELETED"
         GENERATE_FAILED = "GENERATE_FAILED"
         ALREADY_DELETED = "ALREADY_DELETED"
+        FETCH_FAILED = "FETCH_FAILED"
 
     class SUCCESS:
         SAVE_SUCCESS = "SAVE_SUCCESS"

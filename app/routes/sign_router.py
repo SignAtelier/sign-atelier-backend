@@ -15,7 +15,8 @@ from app.services.sign_service import (
     extract_outline,
     generate_sign_ai,
     get_sign_one,
-    get_signs_list,
+    get_signs_by_status_db,
+    get_skeleton_sign,
     hard_delete_sign_db,
     move_file_s3,
     restore_sign_db,
@@ -80,8 +81,10 @@ async def finalize_sign_upload(
 
 
 @router.get("/list")
-async def get_signs(user=Depends(get_current_user)):
-    signs = await get_signs_list(user)
+async def get_signs_by_status(
+    is_deleted: bool, user=Depends(get_current_user)
+):
+    signs = await get_signs_by_status_db(user, is_deleted)
     response = []
 
     for sign in signs:
@@ -190,7 +193,9 @@ async def get_sign(sign_id: str, user=Depends(get_current_user)):
 
 
 @router.get("/outline/{sign_id}")
-async def get_sing_outline(sign_id: str, user=Depends(get_current_user)):
+async def get_sing_outline(
+    sign_id: str, width: int, height: int, user=Depends(get_current_user)
+):
     sign = await get_sign_one(sign_id)
 
     if (
@@ -203,6 +208,8 @@ async def get_sing_outline(sign_id: str, user=Depends(get_current_user)):
             message=MESSAGE.ERROR.FORBIDDEN,
         )
 
-    url = generate_presigned_url(sign.outline_file_name)
+    sign_url = generate_presigned_url(sign.file_name)
+    skeleton_bytes = await get_skeleton_sign(sign_url, width, height)
+    outline_url = generate_presigned_url(sign.outline_file_name)
 
-    return {"status": 200, "url": url}
+    return {"status": 200, "url": outline_url, "skeleton": skeleton_bytes}
