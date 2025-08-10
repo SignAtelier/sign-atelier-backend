@@ -39,9 +39,8 @@
 ## 📑 목차
 
 - [🛠 기술 스택](#-기술-스택)
-  - [MongoDB 선택 이유](#왜-mongodb인가)
-  - [AI/웹 서버 통합 이유](#왜-ai-서버와-웹-서버를-분리하지-않았는가)
-  - [FastAPI 선택 이유](#왜-fastapi인가)
+  - [MongoDB 도입 배경](#mongodb-도입-배경)
+  - [FastAPI 도입 배경](#fastapi-도입-배경)
 - [🚀 핵심 기능](#-핵심-기능)
   - [서명 생성 요청](#서명-생성-요청)
   - [서명 생성 및 저장](#서명-생성-및-저장)
@@ -58,51 +57,21 @@
 
 ## 🛠 기술 스택
 
-### 클라이언트
-
-<span>
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
-  <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white">
-</span>
-
-
-### 서버
+### 서버 기술 스택
 
 <span>
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white">
   <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white">
-</span>
-
-
-### 저장소
-
-<span>
   <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white">
-  <img src="https://img.shields.io/badge/AWS%20S3-569A31?style=for-the-badge&logo=amazonaws&logoColor=white">
 </span>
 
-### 배포
-
-<span>
-  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white">
-  <img src="https://img.shields.io/badge/AWS%20Elastic%20Beanstalk-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
-</span>
-
-### 왜 MongoDB인가?
+#### MongoDB 도입 배경
 
 MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하며 사용할 수 있습니다. 실제로 이 프로젝트에서도 FastAPI + ODM 조합으로 명확한 구조를 유지했습니다. 무엇보다도 MongoDB는 기능 추가나 변경이 발생할 때 기존 구조를 깨지 않고 필드를 유동적으로 확장할 수 있다는 점에서 유리했습니다. 예를 들어, 연습 기록 점수를 저장한다거나 pdf 파일의 서명란에 자동으로 서명을 넣어주는 기능 추가 등으로  서비스 변경 사항이 생기더라도 테이블 구조 변경 없이 자연스럽게 반영할 수 있습니다.
 
 즉, 유연하면서도 구조적인 사용이 가능하다는 점에서 MongoDB를 선택했습니다.
 
-### 왜 AI 서버와 웹 서버를 분리하지 않았는가?
-
-AI 생성부터 응답까지의 과정이 실시간으로 이루어지며, 사용자가 서명 생성을 요청하면 약 5~10초 내외로 바로 결과를 확인하는 구조입니다. 처리 시간이 길지 않기 때문에 단일 FastAPI 서버로도 충분히 감당 가능하다고 판단했습니다.
-
-웹 서버와 AI 서버를 분리하면 통신, 인증, 배포에서 복잡성이 커지게 되는데, 이 단점을 감수하고 얻는 이점보다 단일 구조의 단순성에서 얻는 이점이 더 크다고 생각했습니다. 대신 사용자 서명이 생성되는 동안 서명이 생성되고 있는 듯한 로딩 화면을 띄워 사용자에게 지루함 없이 기다릴 수 있도록 UX 측면을 보완했습니다. 다만, 향후 사용자 수가 많아지거나 고성능 모델로 교체되어 연산량이 증가하는 경우에는 서버를 분리하는 방향으로 구조 개선을 고려할 예정입니다.
-
-### 왜 FastAPI인가?
+#### FastAPI 도입 배경
 
 이 프로젝트는 AI 추론이 필요하기 때문에 Pytorch가 가능한 파이썬 웹 프레임워크를 먼저 선정했습니다. 또한, 빠르고 간결하게 API를 설계할 수 있는 프레임워크가 필요했습니다. FastAPI는 비동기 처리를 기본으로 지원하고, 가볍고 빠르게 동작하는 점에서 적합하다고 판단했습니다. 뿐만 아니라, Pydantic을 통해 요청 데이터에 대한 타입 검증을 명확하게 할 수 있고, Swagger UI를 통해 자동으로 문서화가 되는 부분도 매력적이었습니다.
 
@@ -111,6 +80,42 @@ AI 생성부터 응답까지의 과정이 실시간으로 이루어지며, 사�
 > Pytorch는 AI 모델 학습 및 실행할 수 있는 프레임워크입니다.
 
 > Pydantic은 Python에서 데이터 구조를 선언하고 검증해주는 라이브러리입니다. 입력 값 유효성 검사와 타입 안정성 확보할 수 있습니다.
+
+
+<details> <summary>프로젝트 전체 기술 스택</summary>
+  
+#### 클라이언트
+
+<span>
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
+  <img src="https://img.shields.io/badge/TailwindCSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white">
+  <img src="https://img.shields.io/badge/Zustand-443D4A?style=for-the-badge&logo=react&logoColor=white">
+</span>
+
+#### 서버
+
+<span>
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white">
+  <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white">
+  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white">
+</span>
+
+#### 저장소
+
+<span>
+  <img src="https://img.shields.io/badge/AWS%20S3-569A31?style=for-the-badge&logo=amazonaws&logoColor=white">
+</span>
+
+#### 배포
+
+<span>
+  <img src="https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white">
+  <img src="https://img.shields.io/badge/AWS%20Elastic%20Beanstalk-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white">
+</span>
+
+</details>
 
 ## 🚀 핵심 기능
 
