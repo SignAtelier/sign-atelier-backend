@@ -122,7 +122,7 @@ MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하�
 ### 서명 생성 요청
 
 <details>
-<summary>🖼️ preview</summary>
+<summary>🖼️ 미리보기</summary>
   
 <br>
   
@@ -138,7 +138,7 @@ MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하�
 ### 서명 생성 및 저장
 
 <details>
-<summary>🖼️ preview</summary>
+<summary>🖼️ 미리보기</summary>
   
 <br>
   
@@ -153,7 +153,7 @@ MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하�
 ### 서명 목록 조회 및 이름 수정
 
 <details>
-<summary>🖼️ preview</summary>
+<summary>🖼️ 미리보기</summary>
   
 <br>
   
@@ -169,7 +169,7 @@ MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하�
 ### 서명 연습 및 연습 기록 조회
 
 <details>
-<summary>🖼️ preview</summary>
+<summary>🖼️ 미리보기</summary>
   
 <br>
   
@@ -188,7 +188,7 @@ MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하�
 ### 연습 기록 삭제
 
 <details>
-<summary>🖼️ preview</summary>
+<summary>🖼️ 미리보기</summary>
   
 <br>
   
@@ -204,7 +204,7 @@ MongoDB는 NoSQL이지만, ODM을 활용하면 스키마를 명확히 정의하�
 ### 서명 삭제 및 복구
 
 <details>
-<summary>🖼️ preview</summary>
+<summary>🖼️ 미리보기</summary>
   
 <br>
   
