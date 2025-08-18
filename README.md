@@ -9,7 +9,8 @@
 
 <p align="center">
   <a href="https://signatelier.com/">웹사이트</a> &nbsp;|&nbsp;
-  <a href="https://github.com/SignAtelier/sign-atelier-frontend">클라이언트 레포지토리</a>
+  <a href="https://github.com/SignAtelier/sign-atelier-frontend">클라이언트 레포지토리</a> &nbsp;|&nbsp;
+  <a href="https://signatelier.com">배포 링크</a>
 </p>
 
 ## ⚙️ 레포지토리 구성 및 역할
