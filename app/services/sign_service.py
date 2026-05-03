@@ -1,6 +1,8 @@
 import base64
 import io
+import logging
 from datetime import datetime, timedelta, timezone
+from time import perf_counter
 
 import boto3
 import cv2
@@ -10,7 +12,7 @@ from PIL import Image
 from skimage.morphology import skeletonize
 from starlette.config import Config
 
-from app.ai.generate_sign import generate_signature
+from app.ai.providers import get_sign_provider
 from app.config.constants import CODE, MESSAGE, S3
 from app.config.s3 import s3_client
 from app.db.crud.sign import (
@@ -28,20 +30,44 @@ from app.utils.exception import raise_save_failed
 
 
 config = Config(".env")
+logger = logging.getLogger(__name__)
 
 
-def generate_sign_ai(name: str, image_bytes: io.BytesIO):
+def generate_sign_ai(
+    name: str | None = None,
+    style: str = "executive",
+    seed: int | None = None,
+):
+    started_at = perf_counter()
     try:
-        sign_buffer = generate_signature(name, image_bytes)
+        provider = get_sign_provider()
+        logger.info(
+            "sign.generate.provider.start provider=%s style=%s seed=%s",
+            provider.name,
+            style,
+            seed,
+        )
+        sign_buffer = provider.generate(name or "Signature", style, seed)
 
+        logger.info(
+            "sign.generate.done style=%s seed=%s elapsed=%.2fs",
+            style,
+            seed,
+            perf_counter() - started_at,
+        )
         return sign_buffer
     except Exception as exc:
+        logger.exception(
+            "Signature generation failed. name=%s style=%s seed=%s",
+            name,
+            style,
+            seed,
+        )
         raise AppException(
             status=500,
             code=CODE.ERROR.GENERATE_FAILED,
             message=MESSAGE.ERROR.GENERATE_FAILED,
         ) from exc
-
 
 def move_file_s3(
     temp_file_name: str, bucket: str, final_file_name: str

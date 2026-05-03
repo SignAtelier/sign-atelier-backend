@@ -1,4 +1,8 @@
 from contextlib import asynccontextmanager
+import logging
+from logging.handlers import RotatingFileHandler
+import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -20,6 +24,35 @@ from app.tasks import cleanup_garbage, connect_db
 
 
 load_dotenv(override=True)
+
+
+def configure_logging():
+    log_level = os.getenv("LOG_LEVEL", "INFO").upper()
+    log_file = Path(os.getenv("LOG_FILE", "logs/sign-atelier.log"))
+    log_file.parent.mkdir(parents=True, exist_ok=True)
+
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s [%(name)s] %(message)s"
+    )
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+
+    file_handler = RotatingFileHandler(
+        log_file,
+        maxBytes=10 * 1024 * 1024,
+        backupCount=5,
+        encoding="utf-8",
+    )
+    file_handler.setFormatter(formatter)
+
+    logging.basicConfig(
+        level=log_level,
+        handlers=[console_handler, file_handler],
+        force=True,
+    )
+
+
+configure_logging()
 
 config = Config(".env")
 

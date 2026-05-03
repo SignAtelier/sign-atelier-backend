@@ -1,8 +1,11 @@
 import io
+import logging
+from time import perf_counter
 import uuid
 
 import requests
-from fastapi import APIRouter, Body, Depends, File, Form, UploadFile
+from fastapi import APIRouter, Body, Depends, Form
+from fastapi.responses import JSONResponse
 from starlette.config import Config
 
 from app.config.constants import CODE, MESSAGE
@@ -27,33 +30,65 @@ from app.utils.s3 import generate_presigned_url, upload_sign
 
 router = APIRouter()
 config = Config(".env")
+logger = logging.getLogger(__name__)
+
+
+def _json_response(payload: dict) -> JSONResponse:
+    return JSONResponse(
+        content=payload,
+        headers={"Connection": "close"},
+    )
 
 
 @router.post("/request")
 async def generate_sign(
-    name: str = Form(...),
-    file: UploadFile = File(...),
-    user=Depends(get_current_user),
+    name: str | None = Form(None),
+    style: str = Form("luxury"),
+    seed: int | None = Form(None),
 ):
-    image_bytes = await file.read()
-    sign_buffer = generate_sign_ai(name, image_bytes)
-    social_id = user["social_id"]
-    provider = user["provider"]
-    user_info = social_id + provider
+    request_id = uuid.uuid4().hex[:12]
+    started_at = perf_counter()
+    logger.info(
+        "sign.request.start request_id=%s style=%s seed=%s",
+        request_id,
+        style,
+        seed,
+    )
+    sign_buffer = generate_sign_ai(name, style, seed)
+    user_info = "dev-local"
 
     file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
 
+    logger.info(
+        "sign.request.upload.start request_id=%s file=%s",
+        request_id,
+        file_name,
+    )
     upload_sign(
         buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
     )
+    logger.info(
+        "sign.request.upload.done request_id=%s file=%s elapsed=%.2fs",
+        request_id,
+        file_name,
+        perf_counter() - started_at,
+    )
     url = generate_presigned_url(file_name)
 
-    return {
-        "status": 201,
-        "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
-        "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
-        "detail": url,
-    }
+    logger.info(
+        "sign.request.done request_id=%s file=%s elapsed=%.2fs",
+        request_id,
+        file_name,
+        perf_counter() - started_at,
+    )
+    return _json_response(
+        {
+            "status": 201,
+            "code": CODE.SUCCESS.SIGN_GENERATION_SUCCESS,
+            "message": MESSAGE.SUCCESS.SIGN_GENERATION_SUCCESS,
+            "detail": url,
+        }
+    )
 
 
 @router.post("/upload")
