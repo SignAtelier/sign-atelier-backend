@@ -57,6 +57,16 @@ configure_logging()
 config = Config(".env")
 
 
+def get_allowed_origins() -> list[str]:
+    origins = os.getenv("CLIENT_ORIGINS", CLIENT.URL)
+
+    return [
+        origin.strip()
+        for origin in origins.split(",")
+        if origin.strip()
+    ]
+
+
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     async with connect_db(application), cleanup_garbage():
@@ -68,7 +78,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key=config("SECRET_KEY"))
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[CLIENT.URL],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

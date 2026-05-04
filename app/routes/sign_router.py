@@ -149,7 +149,7 @@ async def edit_sign_name(
     response = {
         "id": str(edited_sign.id),
         "name": edited_sign.name,
-        "udpatedAt": edited_sign.updated_at,
+        "updatedAt": edited_sign.updated_at,
     }
 
     return {"status": 200, "editedSign": response}
@@ -228,7 +228,7 @@ async def get_sign(sign_id: str, user=Depends(get_current_user)):
 
 
 @router.get("/outline/{sign_id}")
-async def get_sing_outline(
+async def get_sign_outline(
     sign_id: str, width: int, height: int, user=Depends(get_current_user)
 ):
     sign = await get_sign_one(sign_id)

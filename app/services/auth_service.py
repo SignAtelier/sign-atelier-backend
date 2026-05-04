@@ -1,9 +1,10 @@
 from datetime import datetime, timezone
+import logging
 
-from authlib.integrations.starlette_client import OAuthError
-from fastapi import Request
+from authlib.jose import JsonWebKey, JsonWebToken
+import httpx
+from starlette.config import Config
 
-from app.config.auth import oauth
 from app.config.constants import CODE, MESSAGE
 from app.db.crud.user import get_user, upsert_user
 from app.exception.custom_exception import AppException
@@ -15,24 +16,63 @@ from app.utils.jwt import (
 )
 
 
-async def handle_google_auth(userinfo: dict, provider: str) -> dict:
-    user_data = await upsert_user(userinfo, provider)
-    refresh_token = create_user_refresh_token(user_data)
-
-    return refresh_token
+config = Config(".env")
+GOOGLE_JWKS_URL = "https://www.googleapis.com/oauth2/v3/certs"
+logger = logging.getLogger(__name__)
 
 
-async def fetch_google_userinfo(request: Request) -> str:
+async def create_google_refresh_token(userinfo: dict) -> str:
+    user_data = await upsert_user(userinfo, "google")
+
+    return create_user_refresh_token(user_data)
+
+
+async def verify_google_credential(credential: str) -> dict:
+    google_client_id = config("GOOGLE_CLIENT_ID")
+
     try:
-        token = await oauth.google.authorize_access_token(request)
-    except OAuthError as exc:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(GOOGLE_JWKS_URL)
+            response.raise_for_status()
+            key_set = JsonWebKey.import_key_set(response.json())
+
+        claims = JsonWebToken(["RS256"]).decode(credential, key_set)
+        claims.validate(leeway=60)
+    except Exception as exc:
+        logger.exception("Google credential verification failed.")
         raise AppException(
             status=401,
             code=CODE.ERROR.NO_TOKEN,
             message=MESSAGE.ERROR.UNAUTHORIZED,
         ) from exc
 
-    return token["userinfo"]
+    if claims.get("aud") != google_client_id:
+        logger.warning(
+            "Google credential audience mismatch. aud=%s expected=%s",
+            claims.get("aud"),
+            google_client_id,
+        )
+        raise AppException(
+            status=401,
+            code=CODE.ERROR.NO_TOKEN,
+            message=MESSAGE.ERROR.UNAUTHORIZED,
+        )
+
+    if claims.get("iss") not in {
+        "https://accounts.google.com",
+        "accounts.google.com",
+    }:
+        logger.warning("Google credential issuer mismatch. iss=%s", claims.get("iss"))
+        raise AppException(
+            status=401,
+            code=CODE.ERROR.NO_TOKEN,
+            message=MESSAGE.ERROR.UNAUTHORIZED,
+        )
+
+    return {
+        "sub": claims["sub"],
+        "picture": claims.get("picture", ""),
+    }
 
 
 def create_user_access_token(user_data: dict) -> str:

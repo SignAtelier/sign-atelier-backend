@@ -69,6 +69,7 @@ def generate_sign_ai(
             message=MESSAGE.ERROR.GENERATE_FAILED,
         ) from exc
 
+
 def move_file_s3(
     temp_file_name: str, bucket: str, final_file_name: str
 ) -> bool:
