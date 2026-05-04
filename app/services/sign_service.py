@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 
 def generate_sign_ai(
     name: str | None = None,
-    style: str = "executive",
+    style: str = "luxury",
     seed: int | None = None,
 ):
     started_at = perf_counter()

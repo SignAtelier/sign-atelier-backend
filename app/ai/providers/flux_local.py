@@ -10,16 +10,29 @@ logger = logging.getLogger(__name__)
 
 
 STYLE_PROMPTS = {
-    "luxury": "Luxury executive handwritten autograph signature",
-    "executive": "Executive handwritten autograph signature",
-    "minimal": "Minimal clean executive handwritten autograph signature",
-    "simple": "Minimal clean executive handwritten autograph signature",
-    "fast": "Fast celebrity-style handwritten autograph signature",
-    "celebrity": "Fast celebrity-style handwritten autograph signature",
-    "sharp": "Sharp angular premium handwritten autograph signature",
-    "round": "Round cursive elegant handwritten autograph signature",
-    "bold": "Bold confident handwritten autograph signature",
-    "wide": "Wide flowing handwritten autograph signature",
+    "luxury": (
+        "luxury premium autograph, elegant long sweeping cursive strokes, "
+        "ornamental flourishes, refined high-end personal signature"
+    ),
+    "calligraphy": (
+        "extravagant abstract personal autograph mark, almost unreadable, "
+        "prioritizing dramatic decorative beauty over legibility, "
+        "thin elegant ink lines with very elaborate calligraphic motion, "
+        "letters should merge into one artistic monogram-like flow, "
+        "large sweeping curves, high-energy curves, and an integrated long tail flourish, "
+        "all decoration must flow from the main signature stroke as one continuous movement, "
+        "avoid clearly spelling the name, avoid readable calligraphy text, "
+        "no detached decorative lines, no random accent marks, no messy scribbles, "
+        "no thick or heavy strokes"
+    ),
+    "simple": (
+        "simple clean autograph, minimal readable handwriting, few strokes, "
+        "modest connected linework, easy to practice, no decorative flourish"
+    ),
+    "sharp": (
+        "sharp angular autograph, the first letter has clearly pointed corners and angular edges, "
+        "crisp geometric initial, high contrast modern strokes, controlled aggressive shape"
+    ),
 }
 
 
@@ -28,8 +41,9 @@ def build_flux_signature_prompt(name: str, style: str = "luxury") -> str:
     style_prompt = STYLE_PROMPTS.get(style_key, STYLE_PROMPTS["luxury"])
     return (
         f'{style_prompt} for the name "{name}". '
-        "Elegant flowing black ink strokes, premium personal signature design, "
-        "smooth connected motion, stylish but realistic autograph, "
+        "Black ink only, handwritten personal signature design, "
+        "smooth connected motion, stylish but realistic autograph. "
+        "The visual style must strongly match the style description. "
         "clean pure white background, no paper texture, no logo, no extra words, "
         "no typed font, no printed letters."
     )
@@ -88,13 +102,18 @@ class FluxLocalProvider(SignGenerationProvider):
 
         self._load()
         prompt = build_flux_signature_prompt(name, style)
-        generator = torch.Generator(device=self.device).manual_seed(seed or 0)
+        actual_seed = (
+            seed if seed is not None else int.from_bytes(os.urandom(4), "big")
+        )
+        generator = torch.Generator(device=self.device).manual_seed(
+            actual_seed
+        )
         started_at = perf_counter()
 
         logger.info(
             "flux.generate.start style=%s seed=%s width=%s height=%s steps=%s",
             style,
-            seed,
+            actual_seed,
             self.width,
             self.height,
             self.steps,
@@ -112,7 +131,7 @@ class FluxLocalProvider(SignGenerationProvider):
         logger.info(
             "flux.generate.inference_done style=%s seed=%s elapsed=%.2fs",
             style,
-            seed,
+            actual_seed,
             perf_counter() - started_at,
         )
         output_buffer = io.BytesIO()
@@ -121,7 +140,7 @@ class FluxLocalProvider(SignGenerationProvider):
         logger.info(
             "flux.generate.done style=%s seed=%s bytes=%s elapsed=%.2fs",
             style,
-            seed,
+            actual_seed,
             output_buffer.getbuffer().nbytes,
             perf_counter() - started_at,
         )
