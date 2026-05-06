@@ -4,6 +4,7 @@ import os
 from time import perf_counter
 
 from app.ai.providers.base import SignGenerationProvider
+from app.models.sign_style import SignatureStyle
 
 
 logger = logging.getLogger(__name__)
@@ -36,9 +37,10 @@ STYLE_PROMPTS = {
 }
 
 
-def build_flux_signature_prompt(name: str, style: str = "luxury") -> str:
-    style_key = style.lower().replace("_", "-")
-    style_prompt = STYLE_PROMPTS.get(style_key, STYLE_PROMPTS["luxury"])
+def build_flux_signature_prompt(
+    name: str, style: SignatureStyle = SignatureStyle.LUXURY
+) -> str:
+    style_prompt = STYLE_PROMPTS[style.value]
     return (
         f'{style_prompt} for the name "{name}". '
         "Black ink only, handwritten personal signature design, "
@@ -96,7 +98,10 @@ class FluxLocalProvider(SignGenerationProvider):
             self.pipe.to(self.device)
 
     def generate(
-        self, name: str, style: str = "luxury", seed: int | None = None
+        self,
+        name: str,
+        style: SignatureStyle = SignatureStyle.LUXURY,
+        seed: int | None = None,
     ) -> io.BytesIO:
         import torch
 

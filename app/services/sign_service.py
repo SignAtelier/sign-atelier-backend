@@ -26,6 +26,7 @@ from app.db.crud.sign import (
 )
 from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
+from app.models.sign_style import SignatureStyle
 from app.utils.cleanup import hard_delete_process
 from app.utils.exception import raise_save_failed
 from app.utils.s3 import generate_presigned_url, upload_sign
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 def generate_sign_ai(
     name: str | None = None,
-    style: str = "luxury",
+    style: SignatureStyle = SignatureStyle.LUXURY,
     seed: int | None = None,
 ):
     started_at = perf_counter()

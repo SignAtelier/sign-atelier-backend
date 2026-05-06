@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body, Depends, Form
 from fastapi.responses import JSONResponse
 
 from app.depends.auth_deps import get_current_user
+from app.models.sign_style import SignatureStyle
 from app.services.sign_service import (
     delete_sign_response,
     edit_name_response,
@@ -28,7 +29,7 @@ def _json_response(payload: dict) -> JSONResponse:
 @router.post("/request")
 async def generate_sign(
     name: str | None = Form(None),
-    style: str = Form("luxury"),
+    style: SignatureStyle = Form(SignatureStyle.LUXURY),
     seed: int | None = Form(None),
 ):
     response = await generate_sign_response(name, style, seed)
