@@ -120,8 +120,18 @@ async def generate_sign_response(
         seed,
     )
     async with _generation_semaphore:
+        logger.info(
+            "sign.request.ai_thread.start request_id=%s",
+            request_id,
+        )
         sign_buffer = await asyncio.to_thread(
             generate_sign_ai, name, style, seed
+        )
+        logger.info(
+            "sign.request.ai_thread.done request_id=%s bytes=%s elapsed=%.2fs",
+            request_id,
+            sign_buffer.getbuffer().nbytes,
+            perf_counter() - started_at,
         )
     user_info = "dev-local"
     file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
@@ -139,6 +149,11 @@ async def generate_sign_response(
         request_id,
         file_name,
         perf_counter() - started_at,
+    )
+    logger.info(
+        "sign.request.url.start request_id=%s file=%s",
+        request_id,
+        file_name,
     )
     url = await storage.generate_read_url(file_name)
 
@@ -161,16 +176,43 @@ async def finalize_sign_upload_response(temp_file_name: str, user):
     final_file_name = temp_file_name.replace("temp", "signs", 1)
     storage = get_storage()
 
+    logger.info(
+        "sign.finalize.copy.start temp_file=%s final_file=%s",
+        temp_file_name,
+        final_file_name,
+    )
     await storage.copy_and_delete(temp_file_name, final_file_name)
+    logger.info(
+        "sign.finalize.copy.done temp_file=%s final_file=%s",
+        temp_file_name,
+        final_file_name,
+    )
 
+    logger.info("sign.finalize.url.start file=%s", final_file_name)
     sign_url = await storage.generate_read_url(final_file_name)
+    logger.info("sign.finalize.fetch.start file=%s", final_file_name)
     image_bytes = await fetch_bytes(sign_url)
+    logger.info(
+        "sign.finalize.fetch.done file=%s bytes=%s",
+        final_file_name,
+        len(image_bytes),
+    )
     buffer = io.BytesIO(image_bytes)
+    logger.info("sign.finalize.outline.start file=%s", final_file_name)
     outline_buffer = await asyncio.to_thread(extract_outline, buffer)
+    logger.info(
+        "sign.finalize.outline.done file=%s bytes=%s",
+        final_file_name,
+        outline_buffer.getbuffer().nbytes,
+    )
     outline_file_name = final_file_name.replace("signs", "outline", 1)
 
+    logger.info("sign.finalize.outline_upload.start file=%s", outline_file_name)
     await storage.upload(outline_buffer, outline_file_name)
+    logger.info("sign.finalize.outline_upload.done file=%s", outline_file_name)
+    logger.info("sign.finalize.db_save.start file=%s", final_file_name)
     await save_sign_db(user, final_file_name, outline_file_name)
+    logger.info("sign.finalize.db_save.done file=%s", final_file_name)
 
     return {
         "status": 201,

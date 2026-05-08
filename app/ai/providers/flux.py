@@ -122,6 +122,11 @@ class FluxLocalProvider(SignGenerationProvider):
             self.height,
             self.steps,
         )
+        logger.info(
+            "flux.generate.pipeline.start style=%s seed=%s",
+            style,
+            actual_seed,
+        )
 
         image = self.pipe(
             prompt=prompt,
@@ -139,6 +144,11 @@ class FluxLocalProvider(SignGenerationProvider):
             perf_counter() - started_at,
         )
         output_buffer = io.BytesIO()
+        logger.info(
+            "flux.generate.png_encode.start style=%s seed=%s",
+            style,
+            actual_seed,
+        )
         image.save(output_buffer, format="PNG")
         output_buffer.seek(0)
         logger.info(
