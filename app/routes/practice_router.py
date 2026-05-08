@@ -3,7 +3,7 @@ import uuid
 from typing import List
 
 from fastapi import APIRouter, Body, Depends, Form, UploadFile
-from starlette.config import Config
+from starlette.responses import StreamingResponse
 
 from app.config.constants import CODE, MESSAGE
 from app.depends.auth_deps import get_current_user
@@ -14,11 +14,10 @@ from app.services.practice_service import (
     get_practices_db,
     save_practice_db,
 )
-from app.utils.s3 import upload_sign
+from app.storage import get_storage
 
 
 router = APIRouter()
-config = Config(".env")
 
 
 @router.post("/upload")
@@ -43,9 +42,7 @@ async def upload_practice(
         buffer = io.BytesIO(await file.read())
 
         practice = await save_practice_db(file_name, sign_id)
-        upload_sign(
-            buffer=buffer, bucket=config("S3_BUCKET"), file_name=file_name
-        )
+        await get_storage().upload(buffer, file_name)
         response = {
             "id": practice.id,
             "fileName": practice.file_name,
@@ -87,6 +84,39 @@ async def get_practices(sign_id: str, _=Depends(get_current_user)):
         response.append(item)
 
     return response
+
+
+@router.get("/download")
+async def download_practice(file_name: str, user=Depends(get_current_user)):
+    social_id = user["social_id"]
+    provider = user["provider"]
+    user_prefix = f"practices/{social_id}{provider}/"
+
+    if not file_name.startswith(user_prefix):
+        raise AppException(
+            status=403,
+            code=CODE.ERROR.FORBIDDEN,
+            message=MESSAGE.ERROR.FORBIDDEN,
+        )
+
+    try:
+        stream, content_type = await get_storage().get_stream(file_name)
+    except AppException:
+        raise
+    except Exception as exc:
+        raise AppException(
+            status=404,
+            code=CODE.ERROR.NOT_FOUND,
+            message=MESSAGE.ERROR.NOT_FOUND,
+        ) from exc
+
+    return StreamingResponse(
+        stream,
+        media_type=content_type,
+        headers={
+            "Content-Disposition": 'attachment; filename="practice.png"'
+        },
+    )
 
 
 @router.delete("")

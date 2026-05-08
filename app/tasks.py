@@ -8,7 +8,7 @@ from app.config.constants import CODE, MESSAGE, CleanupInterval
 from app.db.crud.sign import get_deleted_signs
 from app.db.session import client, db, init_db
 from app.exception.custom_exception import AppException
-from app.utils.cleanup import hard_delete_process
+from app.utils.cleanup import cleanup_expired_temp_files, hard_delete_process
 
 
 config = Config(".env")
@@ -45,6 +45,8 @@ async def _cleanup_loop():
             sign.deleted_at = sign.deleted_at.replace(tzinfo=timezone.utc)
             if sign.deleted_at < now:
                 await hard_delete_process(sign)
+
+        await cleanup_expired_temp_files()
 
         await asyncio.sleep(CleanupInterval.SECONDS)
 

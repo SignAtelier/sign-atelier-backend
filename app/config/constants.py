@@ -76,3 +76,8 @@ class CLIENT:
 
 class CleanupInterval:
     SECONDS = 60
+
+
+class TempStorage:
+    PREFIX = "temp/"
+    EXPIRE_SECONDS = 24 * 60 * 60

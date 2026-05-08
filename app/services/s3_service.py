@@ -1,11 +1,12 @@
-from app.utils.s3 import generate_presigned_url
+from app.storage import get_storage
 
 
 async def generate_urls(keys):
+    storage = get_storage()
     urls = []
 
     for key in keys:
-        url = generate_presigned_url(key)
+        url = await storage.generate_read_url(key)
 
         urls.append(url)
 

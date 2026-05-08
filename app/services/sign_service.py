@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import io
 import logging
@@ -5,17 +6,14 @@ from datetime import datetime, timedelta, timezone
 from time import perf_counter
 import uuid
 
-import boto3
 import cv2
+import httpx
 import numpy as np
-import requests
 from PIL import Image
 from skimage.morphology import skeletonize
-from starlette.config import Config
 
 from app.ai.providers import get_sign_provider
-from app.config.constants import CODE, MESSAGE, S3
-from app.config.s3 import s3_client
+from app.config.constants import CODE, MESSAGE
 from app.db.crud.sign import (
     get_sign_by_id,
     get_signs_by_status,
@@ -27,13 +25,12 @@ from app.db.crud.sign import (
 from app.db.crud.user import get_user
 from app.exception.custom_exception import AppException
 from app.models.sign_style import SignatureStyle
+from app.storage import get_storage
 from app.utils.cleanup import hard_delete_process
-from app.utils.exception import raise_save_failed
-from app.utils.s3 import generate_presigned_url, upload_sign
 
 
-config = Config(".env")
 logger = logging.getLogger(__name__)
+_generation_semaphore = asyncio.Semaphore(1)
 
 
 def generate_sign_ai(
@@ -73,21 +70,25 @@ def generate_sign_ai(
         ) from exc
 
 
-def move_file_s3(
-    temp_file_name: str, bucket: str, final_file_name: str
-) -> bool:
+async def fetch_bytes(url: str) -> bytes:
     try:
-        resource_s3 = boto3.resource(
-            S3.ResourceName,
-            aws_access_key_id=config("CREDENTIALS_ACCESS_KEY"),
-            aws_secret_access_key=config("CREDENTIALS_SECRET_KEY"),
-        )
-        copy_source = {"Bucket": bucket, "Key": temp_file_name}
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+    except httpx.HTTPError as exc:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.FETCH_FAILED,
+            message=MESSAGE.ERROR.FETCH_FAILED,
+        ) from exc
 
-        resource_s3.meta.client.copy(copy_source, bucket, final_file_name)
-        s3_client.delete_object(Bucket=bucket, Key=temp_file_name)
-    except Exception as exc:
-        raise_save_failed(exc)
+    if response.status_code != 200:
+        raise AppException(
+            status=500,
+            code=CODE.ERROR.FETCH_FAILED,
+            message=MESSAGE.ERROR.FETCH_FAILED,
+        )
+
+    return response.content
 
 
 def generate_filename() -> str:
@@ -118,7 +119,10 @@ async def generate_sign_response(
         style,
         seed,
     )
-    sign_buffer = generate_sign_ai(name, style, seed)
+    async with _generation_semaphore:
+        sign_buffer = await asyncio.to_thread(
+            generate_sign_ai, name, style, seed
+        )
     user_info = "dev-local"
     file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
 
@@ -127,16 +131,16 @@ async def generate_sign_response(
         request_id,
         file_name,
     )
-    upload_sign(
-        buffer=sign_buffer, bucket=config("S3_BUCKET"), file_name=file_name
-    )
+    storage = get_storage()
+
+    await storage.upload(sign_buffer, file_name)
     logger.info(
         "sign.request.upload.done request_id=%s file=%s elapsed=%.2fs",
         request_id,
         file_name,
         perf_counter() - started_at,
     )
-    url = generate_presigned_url(file_name)
+    url = await storage.generate_read_url(file_name)
 
     logger.info(
         "sign.request.done request_id=%s file=%s elapsed=%.2fs",
@@ -155,16 +159,17 @@ async def generate_sign_response(
 
 async def finalize_sign_upload_response(temp_file_name: str, user):
     final_file_name = temp_file_name.replace("temp", "signs", 1)
+    storage = get_storage()
 
-    move_file_s3(temp_file_name, config("S3_BUCKET"), final_file_name)
+    await storage.copy_and_delete(temp_file_name, final_file_name)
 
-    sign_url = generate_presigned_url(final_file_name)
-    response = requests.get(sign_url)
-    buffer = io.BytesIO(response.content)
-    outline_buffer = extract_outline(buffer)
+    sign_url = await storage.generate_read_url(final_file_name)
+    image_bytes = await fetch_bytes(sign_url)
+    buffer = io.BytesIO(image_bytes)
+    outline_buffer = await asyncio.to_thread(extract_outline, buffer)
     outline_file_name = final_file_name.replace("signs", "outline", 1)
 
-    upload_sign(outline_buffer, config("S3_BUCKET"), outline_file_name)
+    await storage.upload(outline_buffer, outline_file_name)
     await save_sign_db(user, final_file_name, outline_file_name)
 
     return {
@@ -192,8 +197,8 @@ def assert_sign_owner(sign, user):
         )
 
 
-def serialize_sign(sign, include_url: bool = False) -> dict:
-    response = {
+def serialize_sign(sign) -> dict:
+    return {
         "id": str(sign.id),
         "name": sign.name,
         "fileName": sign.file_name,
@@ -203,16 +208,18 @@ def serialize_sign(sign, include_url: bool = False) -> dict:
         "deletedAt": sign.deleted_at,
     }
 
-    if include_url:
-        response["url"] = generate_presigned_url(sign.file_name)
-
-    return response
-
 
 async def get_signs_by_status_response(user_info, is_deleted):
     signs = await get_signs_by_status_db(user_info, is_deleted)
+    storage = get_storage()
+    response = []
 
-    return [serialize_sign(sign, include_url=True) for sign in signs]
+    for sign in signs:
+        item = serialize_sign(sign)
+        item["url"] = await storage.generate_read_url(sign.file_name)
+        response.append(item)
+
+    return response
 
 
 async def get_owned_sign(user, sign_id: str):
@@ -332,7 +339,7 @@ async def hard_delete_sign_db(user, sign_id: str):
 
 
 async def delete_sign_s3(file_name: str):
-    s3_client.delete_object(Bucket=config("S3_BUCKET"), Key=file_name)
+    await get_storage().delete(file_name)
 
 
 async def hard_delete_sign_response(user, sign_id: str):
@@ -350,31 +357,31 @@ async def hard_delete_sign_response(user, sign_id: str):
 async def get_sign_url_response(user, sign_id: str):
     sign = await get_owned_sign(user, sign_id)
 
-    return generate_presigned_url(sign.file_name)
+    return await get_storage().generate_read_url(sign.file_name)
 
 
 async def get_sign_outline_response(
     user, sign_id: str, width: int, height: int
 ):
     sign = await get_owned_sign(user, sign_id)
-    sign_url = generate_presigned_url(sign.file_name)
+    storage = get_storage()
+    sign_url = await storage.generate_read_url(sign.file_name)
     skeleton_bytes = await get_skeleton_sign(sign_url, width, height)
-    outline_url = generate_presigned_url(sign.outline_file_name)
+    outline_url = await storage.generate_read_url(sign.outline_file_name)
 
     return {"url": outline_url, "skeleton": skeleton_bytes}
 
 
 async def get_skeleton_sign(sign_url: str, width: int, height: int):
-    response = requests.get(sign_url)
+    image_bytes = await fetch_bytes(sign_url)
 
-    if response.status_code != 200:
-        raise AppException(
-            status=500,
-            code=CODE.ERROR.FETCH_FAILED,
-            message=MESSAGE.ERROR.FETCH_FAILED,
-        )
+    return await asyncio.to_thread(
+        encode_skeleton_sign, image_bytes, width, height
+    )
 
-    byte_array = np.frombuffer(response.content, dtype=np.uint8)
+
+def encode_skeleton_sign(image_bytes: bytes, width: int, height: int):
+    byte_array = np.frombuffer(image_bytes, dtype=np.uint8)
     img = cv2.imdecode(byte_array, cv2.IMREAD_GRAYSCALE)
 
     _, binary = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY_INV)
