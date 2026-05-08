@@ -2,8 +2,10 @@ import asyncio
 import base64
 import io
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from time import perf_counter
+from urllib.parse import unquote, urlparse
 import uuid
 
 import cv2
@@ -106,6 +108,17 @@ async def save_sign_db(user_info, file_name, outline_file_name):
     await save_sign(user, file_name, sign_name, outline_file_name)
 
 
+def normalize_storage_key(value: str) -> str:
+    parsed = urlparse(value)
+    key = unquote(parsed.path if parsed.scheme else value).lstrip("/")
+
+    for bucket_name in (os.getenv("GCS_BUCKET"), os.getenv("S3_BUCKET")):
+        if bucket_name and key.startswith(f"{bucket_name}/"):
+            return key[len(bucket_name) + 1 :]
+
+    return key
+
+
 async def generate_sign_response(
     name: str | None,
     style: SignatureStyle,
@@ -133,8 +146,7 @@ async def generate_sign_response(
             sign_buffer.getbuffer().nbytes,
             perf_counter() - started_at,
         )
-    user_info = "dev-local"
-    file_name = f"temp/{user_info}/{uuid.uuid4().hex}.png"
+    file_name = f"temp/{uuid.uuid4().hex}.png"
 
     logger.info(
         "sign.request.upload.start request_id=%s file=%s",
@@ -173,6 +185,7 @@ async def generate_sign_response(
 
 
 async def finalize_sign_upload_response(temp_file_name: str, user):
+    temp_file_name = normalize_storage_key(temp_file_name)
     final_file_name = temp_file_name.replace("temp", "signs", 1)
     storage = get_storage()
 
