@@ -55,7 +55,6 @@ class FluxLocalProvider(SignGenerationProvider):
     name = "flux_local"
 
     def __init__(self):
-        self.pipe = None
         self.model_id = os.getenv(
             "FLUX_MODEL_ID", "black-forest-labs/FLUX.2-klein-4B"
         )
@@ -68,6 +67,7 @@ class FluxLocalProvider(SignGenerationProvider):
         self.cpu_offload = (
             os.getenv("FLUX_CPU_OFFLOAD", "true").lower() == "true"
         )
+        self.pipe = self._load_pipeline()
 
     def _torch_dtype(self):
         import torch
@@ -78,24 +78,24 @@ class FluxLocalProvider(SignGenerationProvider):
             return torch.float32
         return torch.bfloat16
 
-    def _load(self):
-        if self.pipe is not None:
-            return
-
+    def _load_pipeline(self):
         from diffusers import Flux2KleinPipeline
 
         logger.info(
             "Loading FLUX signature provider. model_id=%s", self.model_id
         )
-        self.pipe = Flux2KleinPipeline.from_pretrained(
+        pipe = Flux2KleinPipeline.from_pretrained(
             self.model_id,
             torch_dtype=self._torch_dtype(),
         )
 
         if self.cpu_offload:
-            self.pipe.enable_model_cpu_offload()
+            pipe.enable_model_cpu_offload()
         else:
-            self.pipe.to(self.device)
+            pipe.to(self.device)
+
+        logger.info("FLUX signature provider loaded. model_id=%s", self.model_id)
+        return pipe
 
     def generate(
         self,
@@ -105,7 +105,6 @@ class FluxLocalProvider(SignGenerationProvider):
     ) -> io.BytesIO:
         import torch
 
-        self._load()
         prompt = build_flux_signature_prompt(name, style)
         actual_seed = (
             seed if seed is not None else int.from_bytes(os.urandom(4), "big")
