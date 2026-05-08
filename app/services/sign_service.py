@@ -386,21 +386,11 @@ async def restore_sign_response(user, sign_id: str):
 async def hard_delete_sign_db(user, sign_id: str):
     sign = await get_owned_sign(user, sign_id)
 
-    file_name = sign.file_name
-
     await hard_delete_process(sign)
-
-    return file_name
-
-
-async def delete_sign_s3(file_name: str):
-    await get_storage().delete(file_name)
 
 
 async def hard_delete_sign_response(user, sign_id: str):
-    file_name = await hard_delete_sign_db(user, sign_id)
-
-    await delete_sign_s3(file_name)
+    await hard_delete_sign_db(user, sign_id)
 
     return {
         "status": 200,
