@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Body, Cookie
 from fastapi.responses import JSONResponse, Response
 
@@ -12,6 +14,10 @@ from app.services.auth_service import (
 router = APIRouter()
 
 
+def is_cookie_secure() -> bool:
+    return os.getenv("COOKIE_SECURE", "false").lower() == "true"
+
+
 @router.post("/google")
 async def google_sdk_login(credential: str = Body(..., embed=True)):
     userinfo = await verify_google_credential(credential)
@@ -24,7 +30,7 @@ async def google_sdk_login(credential: str = Body(..., embed=True)):
         value=refresh_token,
         httponly=True,
         samesite="lax",
-        secure=False,
+        secure=is_cookie_secure(),
         max_age=COOKIE.MaxAge.REFRESH,
     )
 
@@ -49,4 +55,8 @@ async def refresh_access_token(
 
 @router.post("/logout")
 async def logout(response: Response):
-    response.delete_cookie("refresh_token")
+    response.delete_cookie(
+        "refresh_token",
+        samesite="lax",
+        secure=is_cookie_secure(),
+    )
